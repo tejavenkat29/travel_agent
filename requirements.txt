@@ -1,0 +1,55 @@
+# ----------------------------------------------------------------------------
+# AI Multi-Agent Travel Planner — Python dependencies
+# Pinned to compatible ranges; run `pip install -r requirements.txt`
+# ----------------------------------------------------------------------------
+
+# --- Web framework / API ---
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+python-multipart==0.0.20
+pydantic==2.10.4
+pydantic-settings==2.7.1
+
+# --- LLM orchestration (LangChain ecosystem) ---
+langchain==0.3.14
+langchain-core==0.3.29
+langchain-community==0.3.14
+langgraph==0.2.62
+langsmith==0.2.10
+
+# --- LLM providers ---
+langchain-openai==0.2.14
+langchain-google-genai==2.0.8
+langchain-ollama==0.2.2
+
+# --- Persistence: PostgreSQL ---
+sqlalchemy==2.0.36
+asyncpg==0.30.0
+psycopg2-binary==2.9.10
+alembic==1.14.0
+
+# --- Cache / message broker: Redis ---
+redis==5.2.1
+
+# --- Configuration / environment ---
+python-dotenv==1.0.1
+
+# --- HTTP client (external travel APIs) ---
+httpx==0.28.1
+
+# --- Observability / logging ---
+structlog==24.4.0
+
+# --- Testing ---
+pytest==8.3.4
+pytest-asyncio==0.25.2
+pytest-cov==6.0.0
+
+# --- Dev tooling ---
+ruff==0.8.6
+black==24.10.0
+mypy==1.14.1
+
+# NOTE: LangFlow is a heavy, optional UI tool. Install it in a separate
+# environment to avoid dependency conflicts with the pinned versions above:
+#   pip install langflow
