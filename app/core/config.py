@@ -49,6 +49,7 @@ class Settings(BaseSettings):
 
     # --- Application ---
     APP_NAME: str = "AI Travel Planner"
+    APP_VERSION: str = "0.1.0"
     APP_ENV: Environment = Environment.DEVELOPMENT
     DEBUG: bool = True
     API_V1_PREFIX: str = "/api/v1"
