@@ -12,6 +12,7 @@ from app.core.config import Settings, get_settings
 from app.domain.interfaces.llm import AbstractLLMService
 
 if TYPE_CHECKING:
+    from app.agents.planner import PlannerAgent
     from app.use_cases.travel_assistant import TravelAssistantUseCase
 
 
@@ -42,3 +43,11 @@ def get_travel_assistant() -> "TravelAssistantUseCase":
 
     chain = build_travel_chain_from_settings(get_settings())
     return TravelAssistantUseCase(chain)
+
+
+@lru_cache
+def get_planner_agent() -> "PlannerAgent":
+    """Provide a cached Planner Agent backed by the configured provider."""
+    from app.agents.planner import build_planner_agent_from_settings
+
+    return build_planner_agent_from_settings(get_settings())
