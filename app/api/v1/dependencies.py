@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from app.agents.flight import FlightAgent
     from app.agents.hotel import HotelAgent
     from app.agents.planner import PlannerAgent
+    from app.agents.transport import TransportAgent
     from app.agents.weather import WeatherAgent
     from app.use_cases.travel_assistant import TravelAssistantUseCase
 
@@ -74,6 +75,14 @@ def get_hotel_agent() -> "HotelAgent":
     from app.agents.hotel import build_hotel_agent_from_settings
 
     return build_hotel_agent_from_settings(get_settings())
+
+
+@lru_cache
+def get_transport_agent() -> "TransportAgent":
+    """Provide a cached, multi-modal Transport Agent."""
+    from app.agents.transport import build_transport_agent_from_settings
+
+    return build_transport_agent_from_settings(get_settings())
 
 
 @lru_cache

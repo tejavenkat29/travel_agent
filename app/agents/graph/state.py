@@ -10,7 +10,6 @@ every agent reads from and adds to.
 input fields and gets progressively filled in as nodes run.
 
 The skip decisions read directly from this state:
-- `flights` already present  → the user supplied a flight → skip the flight node.
 - `hotel` already present     → the user booked a hotel    → skip the hotel node.
 - `include_weather` is False  → the user disabled weather   → skip the weather node.
 """
@@ -20,9 +19,9 @@ from __future__ import annotations
 from typing import TypedDict
 
 from app.schemas.budget import BudgetEstimate
-from app.schemas.flight import FlightOffer
 from app.schemas.hotel import HotelInfo
 from app.schemas.summary import FinalResponse
+from app.schemas.transport import TransportComparison
 from app.schemas.trip import TripParameters
 from app.schemas.weather import WeatherAdvisory
 
@@ -44,7 +43,7 @@ class TravelState(TypedDict, total=False):
     user_request: str  # input: the raw natural-language request
     include_weather: bool  # input: user toggle (default treated as True)
     trip: TripParameters  # produced by the planner node
-    flights: list[FlightOffer]  # from the flight node OR supplied by the user
+    transport: TransportComparison  # flight/train/bus comparison
     hotel: HotelInfo | None  # from the hotel node OR supplied by the user
     weather: WeatherAdvisory  # produced by the weather node
     budget: BudgetEstimate  # produced by the budget node

@@ -32,6 +32,21 @@ class FlightAgent:
                 "Both 'source' and 'destination' are required to search flights.",
                 code="missing_route",
             )
+        # Don't fabricate flights for places without an airport.
+        from app.infrastructure.data.transport_data import (
+            has_airport,
+            nearest_airport,
+        )
+
+        for place in (state.source, state.destination):
+            if not has_airport(place):
+                near = nearest_airport(place)
+                hint = f" Nearest airport: {near}." if near else ""
+                raise ValidationError(
+                    f"No commercial airport at '{place}'. Consider train or bus."
+                    + hint,
+                    code="no_airport",
+                )
         return FlightSearchCriteria(
             origin=state.source,
             destination=state.destination,

@@ -32,14 +32,12 @@ async def plan_trip(
     body: TripPlanRequest,
     workflow: "CompiledStateGraph" = Depends(get_travel_workflow),
 ) -> FinalResponse:
-    # Seed the initial state. Pre-supplied flight/hotel both skip their agent
-    # (via the router) and remain available to budget + final_response.
+    # Seed the initial state. A pre-supplied hotel skips the hotel agent (via
+    # the router) and remains available to budget + final_response.
     initial: TravelState = {
         "user_request": body.request,
         "include_weather": body.include_weather,
     }
-    if body.provided_flight is not None:
-        initial["flights"] = [body.provided_flight]
     if body.provided_hotel is not None:
         initial["hotel"] = body.provided_hotel
 
@@ -50,7 +48,6 @@ async def plan_trip(
         "tags": ["travel-planner", settings.APP_ENV.value],
         "metadata": {
             "include_weather": body.include_weather,
-            "has_flight": body.provided_flight is not None,
             "has_hotel": body.provided_hotel is not None,
         },
     }

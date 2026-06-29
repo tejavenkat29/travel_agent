@@ -23,9 +23,9 @@ from app.agents.chains.itinerary_chain import build_itinerary_chain
 from app.agents.final_response import FinalResponseAgent
 from app.agents.graph.nodes import TravelNodes
 from app.agents.graph.workflow import build_travel_workflow
-from app.schemas.flight import FlightOffer
 from app.schemas.hotel import HotelInfo
 from app.schemas.summary import DayPlan, ItineraryPlan
+from app.schemas.transport import TransportComparison, TransportMode, TransportOption
 from app.schemas.trip import TripParameters
 from app.schemas.weather import SeasonOutlook, WeatherAdvisory, WeatherForecast
 
@@ -41,17 +41,18 @@ class StubPlanner:
         )
 
 
-class SlowFlight:
-    async def find_flights(self, _state):
+class SlowTransport:
+    async def compare(self, _state):
         await asyncio.sleep(DELAY)
-        return [
-            FlightOffer(
-                airline="A", flight_number="1", origin="Mumbai",
-                destination="Tokyo", departure_time="08:00", arrival_time="18:00",
-                duration_minutes=600, stops=0, fare_per_person=100,
-                total_price=200, currency="USD", seats_available=5,
-            )
-        ]
+        bus = TransportOption(
+            mode=TransportMode.BUS, available=True, provider="RTC",
+            price_per_person=100, total_price=200, currency="USD",
+            duration_hours=8, booking_apps=["RedBus"],
+        )
+        return TransportComparison(
+            origin="Mumbai", destination="Tokyo", travelers=2, currency="USD",
+            options=[bus], recommended=bus, advisory="ok", disclaimer="simulated",
+        )
 
 
 class SlowHotel:
@@ -97,7 +98,7 @@ def _build_instrumented():
     """Build the workflow with timing wrappers around every node."""
     events: list[tuple[str, str, float]] = []
     nodes = TravelNodes(
-        planner=StubPlanner(), flight=SlowFlight(), hotel=SlowHotel(),
+        planner=StubPlanner(), transport=SlowTransport(), hotel=SlowHotel(),
         weather=SlowWeather(), budget=BudgetAgent(), final=_stub_final(),
     )
 
@@ -109,7 +110,7 @@ def _build_instrumented():
             return result
         return wrapper
 
-    for nm in ("planner", "flight", "hotel", "weather", "budget", "final"):
+    for nm in ("planner", "transport", "hotel", "weather", "budget", "final"):
         method = f"{nm}_node"
         setattr(nodes, method, track(getattr(nodes, method), nm))
 
@@ -128,21 +129,21 @@ def test_parallel_agents_overlap_and_budget_waits():
             next(t for n, p, t in events if n == name and p == "start"),
             next(t for n, p, t in events if n == name and p == "end"),
         )
-        for name in ("flight", "hotel", "weather", "budget")
+        for name in ("transport", "hotel", "weather", "budget")
     }
 
     # 1) Parallel: the three intervals share a common instant.
-    latest_start = max(spans[n][0] for n in ("flight", "hotel", "weather"))
-    earliest_end = min(spans[n][1] for n in ("flight", "hotel", "weather"))
-    assert latest_start < earliest_end, "flight/hotel/weather did not overlap"
+    latest_start = max(spans[n][0] for n in ("transport", "hotel", "weather"))
+    earliest_end = min(spans[n][1] for n in ("transport", "hotel", "weather"))
+    assert latest_start < earliest_end, "transport/hotel/weather did not overlap"
 
     # 2) Synchronization: budget starts only after all three have finished.
-    last_parallel_end = max(spans[n][1] for n in ("flight", "hotel", "weather"))
+    last_parallel_end = max(spans[n][1] for n in ("transport", "hotel", "weather"))
     assert spans["budget"][0] >= last_parallel_end - 1e-3, "budget started too early"
 
     # 3) Performance: parallel section ~= one DELAY, far below 3*DELAY.
     parallel_window = last_parallel_end - min(
-        spans[n][0] for n in ("flight", "hotel", "weather")
+        spans[n][0] for n in ("transport", "hotel", "weather")
     )
     assert parallel_window < 2 * DELAY, f"no speedup: {parallel_window:.3f}s"
     assert wall < 3 * DELAY, f"wall clock {wall:.3f}s looks sequential"

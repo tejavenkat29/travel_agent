@@ -13,8 +13,8 @@ single source of truth and no data drift.
 from pydantic import BaseModel, Field
 
 from app.schemas.budget import BudgetEstimate
-from app.schemas.flight import FlightOffer
 from app.schemas.hotel import HotelInfo
+from app.schemas.transport import TransportComparison
 from app.schemas.trip import TripParameters
 from app.schemas.weather import WeatherAdvisory
 
@@ -55,8 +55,8 @@ class TravelSummary(BaseModel):
     travelers: int
     num_days: int
     currency: str
-    flight: FlightOffer | None = Field(
-        default=None, description="The selected/recommended flight"
+    transport: TransportComparison | None = Field(
+        default=None, description="Flight/train/bus comparison + recommendation"
     )
     hotel: HotelInfo | None = None
     weather: WeatherAdvisory | None = None
@@ -69,8 +69,8 @@ class FinalResponseRequest(BaseModel):
     """Input: the collected outputs from all upstream agents."""
 
     trip: TripParameters
-    flights: list[FlightOffer] = Field(
-        default_factory=list, description="Offers from the Flight Agent"
+    transport: TransportComparison | None = Field(
+        default=None, description="Comparison from the Transport Agent"
     )
     hotel: HotelInfo | None = None
     weather: WeatherAdvisory | None = None
@@ -89,16 +89,12 @@ class FinalResponse(BaseModel):
 class TripPlanRequest(BaseModel):
     """Input for the end-to-end `/plan` workflow.
 
-    Supplying `provided_flight` / `provided_hotel` tells the workflow the user
-    already has them, so those agents are skipped. `include_weather=False`
-    skips the weather agent.
+    Supplying `provided_hotel` tells the workflow the user already booked a
+    hotel, so that agent is skipped. `include_weather=False` skips weather.
     """
 
     request: str = Field(
         ..., min_length=3, description="Natural-language travel request"
-    )
-    provided_flight: FlightOffer | None = Field(
-        default=None, description="A flight the user already has (skips flight search)"
     )
     provided_hotel: HotelInfo | None = Field(
         default=None, description="A hotel the user already booked (skips hotel search)"

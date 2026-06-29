@@ -16,8 +16,10 @@ from app.schemas.trip import TripParameters
 class BudgetRates(BaseModel):
     """Per-unit cost assumptions used when actual figures aren't supplied."""
 
-    flight_per_person: float = Field(
-        default=300.0, ge=0, description="Estimated round-trip airfare per person"
+    travel_per_person: float = Field(
+        default=300.0,
+        ge=0,
+        description="Estimated intercity travel (flight/train/bus) per person",
     )
     hotel_per_night: float = Field(
         default=120.0, ge=0, description="Estimated room cost per night"
@@ -35,10 +37,10 @@ class BudgetRequest(BaseModel):
     """Input for the budget endpoint."""
 
     trip: TripParameters = Field(..., description="Shared travel state")
-    flight_total: float | None = Field(
+    transport_total: float | None = Field(
         default=None,
         ge=0,
-        description="Actual total flight cost (e.g. from the Flight Agent)",
+        description="Actual intercity travel total (e.g. from the Transport Agent)",
     )
     hotel_per_night: float | None = Field(
         default=None, ge=0, description="Actual nightly hotel rate, if known"
@@ -58,7 +60,7 @@ class BudgetRequest(BaseModel):
                     "num_days": 5,
                     "travelers": 2,
                 },
-                "flight_total": 900,
+                "transport_total": 900,
             }
         }
     }
@@ -78,10 +80,10 @@ class CostLineItem(BaseModel):
 class CostBreakdown(BaseModel):
     """Per-category costs."""
 
-    flight: float
+    travel: float  # intercity travel (flight/train/bus)
     hotel: float
     food: float
-    transport: float
+    transport: float  # local transport at the destination
     line_items: list[CostLineItem]
 
 
