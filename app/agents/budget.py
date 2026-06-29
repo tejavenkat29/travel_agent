@@ -14,6 +14,7 @@ transparency.
 from __future__ import annotations
 
 from app.core.logging import get_logger
+from app.core.observability import traceable
 from app.schemas.budget import (
     BudgetEstimate,
     BudgetRates,
@@ -105,6 +106,7 @@ class BudgetAgent:
         # Default assumptions; per-request overrides take precedence.
         self._default_rates = default_rates or BudgetRates()
 
+    @traceable(run_type="chain", name="budget_agent")
     async def estimate(
         self,
         state: TripParameters,

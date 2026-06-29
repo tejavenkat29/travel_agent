@@ -26,6 +26,7 @@ from app.agents.prompts.planner import build_planner_prompt
 from app.core.config import Settings
 from app.core.exceptions import ExternalServiceError
 from app.core.logging import get_logger
+from app.core.observability import traceable
 from app.infrastructure.llm.factory import build_chat_model
 from app.schemas.trip import TripParameters
 
@@ -47,6 +48,7 @@ class PlannerAgent:
     def __init__(self, chain: Runnable) -> None:
         self._chain = chain
 
+    @traceable(run_type="chain", name="planner_agent")
     async def plan(self, user_request: str) -> TripParameters:
         logger.info("planner.extract", request_len=len(user_request))
         try:

@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from app.core.exceptions import ExternalServiceError, ValidationError
 from app.core.logging import get_logger
+from app.core.observability import traceable
 from app.domain.interfaces.flight import FlightProvider
 from app.schemas.flight import FlightOffer, FlightSearchCriteria
 from app.schemas.trip import TripParameters
@@ -38,6 +39,7 @@ class FlightAgent:
             currency=state.currency or "USD",
         )
 
+    @traceable(run_type="chain", name="flight_agent")
     async def find_flights(self, state: TripParameters) -> list[FlightOffer]:
         criteria = self._build_criteria(state)
         try:

@@ -20,6 +20,7 @@ from app.core.config import settings
 from app.core.error_handlers import register_exception_handlers
 from app.core.logging import configure_logging, get_logger
 from app.core.middleware import RequestContextMiddleware
+from app.core.observability import configure_observability
 
 logger = get_logger(__name__)
 
@@ -32,6 +33,7 @@ async def lifespan(app: FastAPI):
     here once the infrastructure layer is implemented.
     """
     configure_logging()
+    configure_observability()
     logger.info(
         "application.startup",
         env=settings.APP_ENV.value,

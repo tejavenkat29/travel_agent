@@ -19,6 +19,7 @@ from langchain_core.runnables import Runnable
 
 from app.core.exceptions import ExternalServiceError
 from app.core.logging import get_logger
+from app.core.observability import traceable
 from app.schemas.flight import FlightOffer
 from app.schemas.summary import (
     FinalResponse,
@@ -76,6 +77,7 @@ class FinalResponseAgent:
                 code="itinerary_generation_failed",
             ) from exc
 
+    @traceable(run_type="chain", name="final_response_agent")
     async def compose(self, req: FinalResponseRequest) -> FinalResponse:
         itinerary = await self._generate_itinerary(req)
         flight = _select_flight(req.flights)

@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from app.core.exceptions import ExternalServiceError
 from app.core.logging import get_logger
+from app.core.observability import traceable
 from app.domain.interfaces.weather import WeatherProvider
 from app.schemas.weather import SeasonOutlook, WeatherAdvisory, WeatherForecast
 
@@ -69,6 +70,7 @@ class WeatherAgent:
     def __init__(self, provider: WeatherProvider) -> None:
         self._provider = provider
 
+    @traceable(run_type="chain", name="weather_agent")
     async def advise(self, destination: str) -> WeatherAdvisory:
         try:
             forecast = await self._provider.get_forecast(destination)

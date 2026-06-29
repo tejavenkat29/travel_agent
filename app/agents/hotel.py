@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from app.core.exceptions import ExternalServiceError, ValidationError
 from app.core.logging import get_logger
+from app.core.observability import traceable
 from app.domain.interfaces.hotel import HotelProvider
 from app.schemas.hotel import (
     HotelInfo,
@@ -47,6 +48,7 @@ class HotelAgent:
             currency=state.currency or "USD",
         )
 
+    @traceable(run_type="chain", name="hotel_agent")
     async def search(self, state: TripParameters) -> HotelSearchResponse:
         criteria = self._build_criteria(state)
         try:

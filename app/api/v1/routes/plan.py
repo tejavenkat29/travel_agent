@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends
 
 from app.agents.graph.state import TravelState
 from app.api.v1.dependencies import get_travel_workflow
+from app.core.config import settings
 from app.schemas.summary import FinalResponse, TripPlanRequest
 
 if TYPE_CHECKING:
@@ -42,5 +43,16 @@ async def plan_trip(
     if body.provided_hotel is not None:
         initial["hotel"] = body.provided_hotel
 
-    result = await workflow.ainvoke(initial)
+    # Run config enriches the LangSmith trace: a stable run name, filterable
+    # tags, and metadata about which agents were skipped.
+    config = {
+        "run_name": "travel_plan_workflow",
+        "tags": ["travel-planner", settings.APP_ENV.value],
+        "metadata": {
+            "include_weather": body.include_weather,
+            "has_flight": body.provided_flight is not None,
+            "has_hotel": body.provided_hotel is not None,
+        },
+    }
+    result = await workflow.ainvoke(initial, config=config)
     return result["final"]
