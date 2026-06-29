@@ -217,6 +217,28 @@ mypy app               # type-check
 
 ---
 
+## 🚢 Production deployment
+
+This project is production-ready. One command runs the full stack:
+
+```bash
+cp .env.example .env          # set SECRET_KEY, DEBUG=false, CORS, LLM keys
+docker compose up -d --build  # API + PostgreSQL + Redis, auto-migrations
+curl localhost:8000/health        # liveness
+curl localhost:8000/health/ready  # readiness (DB + Redis)
+```
+
+Production features: environment validation (fails fast on insecure config),
+structured JSON logging, security headers, per-IP rate limiting, restricted
+CORS, healthcheck + readiness probes, Redis caching, LangSmith tracing, a
+multi-stage non-root image, and GitHub Actions CI/CD.
+
+Detailed docs:
+- [Deployment guide](docs/DEPLOYMENT.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [API reference](docs/API.md)
+- [Production checklist](docs/CHECKLIST.md)
+
 ## 📄 License
 
 TBD.

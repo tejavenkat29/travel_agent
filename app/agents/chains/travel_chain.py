@@ -36,7 +36,7 @@ def get_travel_output_parser() -> PydanticOutputParser:
     return PydanticOutputParser(pydantic_object=TravelRecommendation)
 
 
-def build_travel_chain(model: "BaseChatModel | Runnable") -> Runnable:
+def build_travel_chain(model: BaseChatModel | Runnable) -> Runnable:
     """Compose `prompt | model | parser` into a single Runnable."""
     parser = get_travel_output_parser()
     prompt = build_travel_chat_prompt(parser.get_format_instructions())

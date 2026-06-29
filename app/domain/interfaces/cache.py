@@ -25,3 +25,10 @@ class CacheService(ABC):
     @abstractmethod
     async def delete(self, key: str) -> None:
         """Remove a key (no-op if absent)."""
+
+    @abstractmethod
+    async def incr(self, key: str, ttl: int | None = None) -> int:
+        """Atomically increment a counter; set ttl only on first increment.
+
+        Used for fixed-window rate limiting. Returns the new count.
+        """

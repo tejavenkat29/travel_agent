@@ -56,3 +56,23 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
         )
         response.headers[REQUEST_ID_HEADER] = request_id
         return response
+
+
+# Conservative security headers applied to every response.
+_SECURITY_HEADERS = {
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Referrer-Policy": "strict-origin-when-cross-origin",
+    "X-XSS-Protection": "0",  # modern browsers; rely on CSP instead
+    "Content-Security-Policy": "default-src 'self'",
+}
+
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    """Adds standard hardening headers to every response."""
+
+    async def dispatch(self, request: Request, call_next) -> Response:
+        response = await call_next(request)
+        for header, value in _SECURITY_HEADERS.items():
+            response.headers.setdefault(header, value)
+        return response

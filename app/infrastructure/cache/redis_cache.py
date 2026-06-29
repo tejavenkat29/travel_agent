@@ -20,7 +20,7 @@ class RedisCacheService(CacheService):
         self._client = client
 
     @classmethod
-    def from_url(cls, url: str) -> "RedisCacheService":
+    def from_url(cls, url: str) -> RedisCacheService:
         # Imported lazily so the package isn't required unless Redis is used.
         from redis.asyncio import from_url
 
@@ -37,3 +37,10 @@ class RedisCacheService(CacheService):
 
     async def delete(self, key: str) -> None:
         await self._client.delete(key)
+
+    async def incr(self, key: str, ttl: int | None = None) -> int:
+        # INCR is atomic; set the window expiry only when the key is created.
+        count = await self._client.incr(key)
+        if count == 1 and ttl:
+            await self._client.expire(key, ttl)
+        return count

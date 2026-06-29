@@ -15,10 +15,10 @@ from __future__ import annotations
 from app.agents.budget import BudgetAgent
 from app.agents.final_response import FinalResponseAgent
 from app.agents.flight import FlightAgent
+from app.agents.graph.state import TravelState
 from app.agents.hotel import HotelAgent
 from app.agents.planner import PlannerAgent
 from app.agents.weather import WeatherAgent
-from app.agents.graph.state import TravelState
 from app.core.logging import get_logger
 from app.schemas.summary import FinalResponseRequest
 

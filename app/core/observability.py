@@ -20,7 +20,8 @@ import os
 from collections.abc import Callable
 from typing import Any, TypeVar
 
-from app.core.config import Settings, settings as _settings
+from app.core.config import Settings
+from app.core.config import settings as _settings
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)

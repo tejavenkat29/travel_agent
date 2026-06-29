@@ -34,3 +34,15 @@ class InMemoryCacheService(CacheService):
 
     async def delete(self, key: str) -> None:
         self._store.pop(key, None)
+
+    async def incr(self, key: str, ttl: int | None = None) -> int:
+        now = time.monotonic()
+        entry = self._store.get(key)
+        # Start a fresh window if absent or the current window expired.
+        if entry is None or (entry[0] is not None and now >= entry[0]):
+            expires_at = now + ttl if ttl else None
+            self._store[key] = (expires_at, "1")
+            return 1
+        count = int(entry[1]) + 1
+        self._store[key] = (entry[0], str(count))  # keep original window expiry
+        return count

@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from langchain_core.language_models.chat_models import BaseChatModel
 
 
-def build_itinerary_chain(model: "BaseChatModel") -> Runnable:
+def build_itinerary_chain(model: BaseChatModel) -> Runnable:
     """Compose the itinerary-generation chain."""
     return build_itinerary_prompt() | model.with_structured_output(ItineraryPlan)
 

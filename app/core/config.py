@@ -13,7 +13,7 @@ from enum import Enum
 from functools import lru_cache
 from typing import Annotated
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
@@ -56,6 +56,14 @@ class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
     PORT: int = 8000
     LOG_LEVEL: str = "INFO"
+
+    # --- Docs / API surface ---
+    DOCS_ENABLED: bool = True  # disable interactive docs in hardened deployments
+
+    # --- Rate limiting (fixed-window, per client IP) ---
+    RATE_LIMIT_ENABLED: bool = True
+    RATE_LIMIT_REQUESTS: int = 100
+    RATE_LIMIT_WINDOW_SECONDS: int = 60
 
     # --- Security ---
     SECRET_KEY: str = "change-me"
@@ -116,6 +124,19 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.APP_ENV is Environment.PRODUCTION
+
+    @model_validator(mode="after")
+    def _enforce_production_safety(self) -> "Settings":
+        """Fail fast on insecure production configuration."""
+        if self.is_production:
+            if self.SECRET_KEY == "change-me":
+                raise ValueError(
+                    "SECRET_KEY must be set to a strong, unique value in "
+                    "production (the default 'change-me' is not allowed)."
+                )
+            if self.DEBUG:
+                raise ValueError("DEBUG must be False in production.")
+        return self
 
 
 @lru_cache

@@ -15,10 +15,15 @@ services:
         required: false
     environment:
       APP_ENV: production
+      DEBUG: "false"
+      # CHANGE THIS in real deployments (use a secret manager, not a literal).
+      SECRET_KEY: ${SECRET_KEY:-local-compose-dev-secret-not-for-real-use}
       # Point the app at the compose service hostnames (not localhost).
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-travel}:${POSTGRES_PASSWORD:-travel}@postgres:5432/${POSTGRES_DB:-travel_planner}
       REDIS_URL: redis://redis:6379/0
       CACHE_BACKEND: redis
+      # Lock CORS down to your real frontend origin(s) in production.
+      BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-http://localhost:3000}
     ports:
       - "8000:8000"
     depends_on:

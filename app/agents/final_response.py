@@ -123,7 +123,7 @@ def render_travel_markdown(s: TravelSummary) -> str:
     if s.flight:
         f = s.flight
         L.append(
-            f"| Airline | Flight | Route | Depart | Arrive | Stops | Price |"
+            "| Airline | Flight | Route | Depart | Arrive | Stops | Price |"
         )
         L.append("|---|---|---|---|---|---|---|")
         stops = "Direct" if f.stops == 0 else f"{f.stops} stop(s)"

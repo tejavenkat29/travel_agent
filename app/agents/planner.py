@@ -36,7 +36,7 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-def build_planner_chain(model: "BaseChatModel") -> Runnable:
+def build_planner_chain(model: BaseChatModel) -> Runnable:
     """Compose `prompt | structured-output model` into a single Runnable."""
     structured_model = model.with_structured_output(TripParameters)
     return build_planner_prompt() | structured_model
