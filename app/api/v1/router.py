@@ -17,6 +17,7 @@ from app.api.v1.routes import (
     planner,
     summary,
     travel,
+    users,
     weather,
 )
 
@@ -29,6 +30,7 @@ api_router.include_router(plan.router)
 api_router.include_router(planner.router)
 api_router.include_router(summary.router)
 api_router.include_router(travel.router)
+api_router.include_router(users.router)
 api_router.include_router(weather.router)
 
 # Further business routers are included here as they are built, e.g.:
