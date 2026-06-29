@@ -15,13 +15,27 @@ logger = get_logger(__name__)
 
 
 def build_hotel_provider(settings: Settings) -> HotelProvider:
-    """Return the configured hotel provider (live if keyed, else mock)."""
+    """Return the configured hotel provider (live if keyed, else mock).
+
+    Wrapped in a read-through caching decorator when caching is enabled.
+    """
     api_key = getattr(settings, "HOTELS_API_KEY", None)
     if api_key:
         from app.infrastructure.external.hotels.api_provider import ApiHotelProvider
 
         logger.info("hotels.provider_selected", provider="api")
-        return ApiHotelProvider(api_key=api_key)
+        provider: HotelProvider = ApiHotelProvider(api_key=api_key)
+    else:
+        logger.info("hotels.provider_selected", provider="mock")
+        provider = MockHotelProvider()
 
-    logger.info("hotels.provider_selected", provider="mock")
-    return MockHotelProvider()
+    if settings.CACHE_ENABLED:
+        from app.infrastructure.cache.factory import get_cache_service
+        from app.infrastructure.external.hotels.caching_provider import (
+            CachingHotelProvider,
+        )
+
+        provider = CachingHotelProvider(
+            provider, get_cache_service(), settings.CACHE_TTL_HOTELS
+        )
+    return provider

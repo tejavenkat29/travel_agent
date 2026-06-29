@@ -16,14 +16,28 @@ logger = get_logger(__name__)
 
 
 def build_weather_provider(settings: Settings) -> WeatherProvider:
-    """Return the configured weather provider (live if keyed, else mock)."""
+    """Return the configured weather provider (live if keyed, else mock).
+
+    Wrapped in a read-through caching decorator when caching is enabled.
+    """
     if settings.WEATHER_API_KEY:
         from app.infrastructure.external.weather.api_provider import (
             ApiWeatherProvider,
         )
 
         logger.info("weather.provider_selected", provider="api")
-        return ApiWeatherProvider(api_key=settings.WEATHER_API_KEY)
+        provider: WeatherProvider = ApiWeatherProvider(api_key=settings.WEATHER_API_KEY)
+    else:
+        logger.info("weather.provider_selected", provider="mock")
+        provider = MockWeatherProvider()
 
-    logger.info("weather.provider_selected", provider="mock")
-    return MockWeatherProvider()
+    if settings.CACHE_ENABLED:
+        from app.infrastructure.cache.factory import get_cache_service
+        from app.infrastructure.external.weather.caching_provider import (
+            CachingWeatherProvider,
+        )
+
+        provider = CachingWeatherProvider(
+            provider, get_cache_service(), settings.CACHE_TTL_WEATHER
+        )
+    return provider

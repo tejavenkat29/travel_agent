@@ -92,6 +92,14 @@ class Settings(BaseSettings):
     # --- Redis ---
     REDIS_URL: str = "redis://localhost:6379/0"
 
+    # --- Cache ---
+    CACHE_ENABLED: bool = True
+    CACHE_BACKEND: str = "redis"  # redis | memory
+    # Per-category time-to-live in seconds (tuned to how fast each changes).
+    CACHE_TTL_WEATHER: int = 21600  # 6 hours  — climate/forecast moves slowly
+    CACHE_TTL_HOTELS: int = 1800  # 30 minutes — inventory changes moderately
+    CACHE_TTL_FLIGHTS: int = 300  # 5 minutes  — fares/seats change quickly
+
     # --- External travel APIs ---
     WEATHER_API_KEY: str | None = None
     FLIGHTS_API_KEY: str | None = None

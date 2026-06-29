@@ -17,14 +17,29 @@ logger = get_logger(__name__)
 
 
 def build_flight_provider(settings: Settings) -> FlightProvider:
-    """Return the configured flight provider (live if keyed, else mock)."""
+    """Return the configured flight provider (live if keyed, else mock).
+
+    When caching is enabled, the chosen provider is wrapped in a read-through
+    caching decorator — transparent to the agent.
+    """
     if settings.FLIGHTS_API_KEY:
         from app.infrastructure.external.flights.api_provider import (
             ApiFlightProvider,
         )
 
         logger.info("flights.provider_selected", provider="api")
-        return ApiFlightProvider(api_key=settings.FLIGHTS_API_KEY)
+        provider: FlightProvider = ApiFlightProvider(api_key=settings.FLIGHTS_API_KEY)
+    else:
+        logger.info("flights.provider_selected", provider="mock")
+        provider = MockFlightProvider()
 
-    logger.info("flights.provider_selected", provider="mock")
-    return MockFlightProvider()
+    if settings.CACHE_ENABLED:
+        from app.infrastructure.cache.factory import get_cache_service
+        from app.infrastructure.external.flights.caching_provider import (
+            CachingFlightProvider,
+        )
+
+        provider = CachingFlightProvider(
+            provider, get_cache_service(), settings.CACHE_TTL_FLIGHTS
+        )
+    return provider
