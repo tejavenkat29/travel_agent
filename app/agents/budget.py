@@ -34,28 +34,28 @@ def compute_breakdown(
     state: TripParameters,
     *,
     rates: BudgetRates,
-    flight_total: float | None = None,
+    transport_total: float | None = None,
     hotel_per_night: float | None = None,
 ) -> CostBreakdown:
     """Compute per-category costs (actuals override estimates)."""
     days = state.num_days or 1
     travelers = state.travelers or 1
 
-    # --- Flights ---
-    if flight_total is not None:
-        flight = _money(flight_total)
-        flight_item = CostLineItem(
-            category="flight",
-            amount=flight,
-            detail="Actual flight total provided",
+    # --- Intercity travel (flight/train/bus) ---
+    if transport_total is not None:
+        travel = _money(transport_total)
+        travel_item = CostLineItem(
+            category="travel",
+            amount=travel,
+            detail="Recommended transport total provided",
             estimated=False,
         )
     else:
-        flight = _money(rates.flight_per_person * travelers)
-        flight_item = CostLineItem(
-            category="flight",
-            amount=flight,
-            detail=f"{rates.flight_per_person} x {travelers} travelers",
+        travel = _money(rates.travel_per_person * travelers)
+        travel_item = CostLineItem(
+            category="travel",
+            amount=travel,
+            detail=f"{rates.travel_per_person} x {travelers} travelers",
             estimated=True,
         )
 
@@ -78,11 +78,11 @@ def compute_breakdown(
         estimated=True,
     )
 
-    # --- Local transport ---
-    transport = _money(rates.transport_per_person_per_day * travelers * days)
-    transport_item = CostLineItem(
-        category="transport",
-        amount=transport,
+    # --- Local transport (at the destination) ---
+    local = _money(rates.transport_per_person_per_day * travelers * days)
+    local_item = CostLineItem(
+        category="local transport",
+        amount=local,
         detail=(
             f"{rates.transport_per_person_per_day} x {travelers} travelers "
             f"x {days} days"
@@ -91,11 +91,11 @@ def compute_breakdown(
     )
 
     return CostBreakdown(
-        flight=flight,
+        travel=travel,
         hotel=hotel,
         food=food,
-        transport=transport,
-        line_items=[flight_item, hotel_item, food_item, transport_item],
+        transport=local,
+        line_items=[travel_item, hotel_item, food_item, local_item],
     )
 
 
@@ -111,7 +111,7 @@ class BudgetAgent:
         self,
         state: TripParameters,
         *,
-        flight_total: float | None = None,
+        transport_total: float | None = None,
         hotel_per_night: float | None = None,
         rates: BudgetRates | None = None,
     ) -> BudgetEstimate:
@@ -123,11 +123,11 @@ class BudgetAgent:
         breakdown = compute_breakdown(
             state,
             rates=rates,
-            flight_total=flight_total,
+            transport_total=transport_total,
             hotel_per_night=hotel_per_night,
         )
         total = _money(
-            breakdown.flight + breakdown.hotel + breakdown.food + breakdown.transport
+            breakdown.travel + breakdown.hotel + breakdown.food + breakdown.transport
         )
 
         within_budget = difference = utilization = None

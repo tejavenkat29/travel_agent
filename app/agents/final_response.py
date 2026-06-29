@@ -20,7 +20,6 @@ from langchain_core.runnables import Runnable
 from app.core.exceptions import ExternalServiceError
 from app.core.logging import get_logger
 from app.core.observability import traceable
-from app.schemas.flight import FlightOffer
 from app.schemas.summary import (
     FinalResponse,
     FinalResponseRequest,
@@ -29,15 +28,6 @@ from app.schemas.summary import (
 )
 
 logger = get_logger(__name__)
-
-
-def _select_flight(flights: list[FlightOffer]) -> FlightOffer | None:
-    """Pick the best flight: cheapest within budget, else cheapest overall."""
-    if not flights:
-        return None
-    within = [f for f in flights if f.within_budget]
-    pool = within or flights
-    return min(pool, key=lambda f: f.total_price)
 
 
 def _weather_brief(req: FinalResponseRequest) -> str:
@@ -80,7 +70,6 @@ class FinalResponseAgent:
     @traceable(run_type="chain", name="final_response_agent")
     async def compose(self, req: FinalResponseRequest) -> FinalResponse:
         itinerary = await self._generate_itinerary(req)
-        flight = _select_flight(req.flights)
 
         summary = TravelSummary(
             destination=req.trip.destination,
@@ -89,7 +78,7 @@ class FinalResponseAgent:
             num_days=req.trip.num_days or len(itinerary.daily_itinerary) or 1,
             currency=req.trip.currency
             or (req.budget.currency if req.budget else "USD"),
-            flight=flight,
+            transport=req.transport,
             hotel=req.hotel,
             weather=req.weather,
             budget=req.budget,
@@ -118,22 +107,39 @@ def render_travel_markdown(s: TravelSummary) -> str:
         meta.append(f"budget **{cur} {s.budget.user_budget:,.0f}**")
     L.append(" · ".join(meta))
 
-    # --- Flight ---
-    L.append("\n## ✈️ Flight")
-    if s.flight:
-        f = s.flight
-        L.append(
-            "| Airline | Flight | Route | Depart | Arrive | Stops | Price |"
-        )
-        L.append("|---|---|---|---|---|---|---|")
-        stops = "Direct" if f.stops == 0 else f"{f.stops} stop(s)"
-        L.append(
-            f"| {f.airline} | {f.flight_number} | {f.origin} → {f.destination} "
-            f"| {f.departure_time} | {f.arrival_time} | {stops} "
-            f"| {f.currency} {f.total_price:,.2f} |"
-        )
+    # --- Transport (flight / train / bus) ---
+    L.append("\n## 🚆 Getting There")
+    t = s.transport
+    if t:
+        L.append("| Mode | Available | Operator | Total | ~Duration | Book via |")
+        L.append("|---|---|---|---|---|---|")
+        for o in t.options:
+            if o.available and o.total_price is not None:
+                avail = "✅"
+                price = f"{o.currency} {o.total_price:,.2f}"
+                dur = f"{o.duration_hours}h" if o.duration_hours else "—"
+            else:
+                avail = "❌"
+                price = "—"
+                dur = "—"
+            apps = ", ".join(o.booking_apps[:3]) if o.booking_apps else "—"
+            L.append(
+                f"| {o.mode.value.title()} | {avail} | {o.provider or '—'} "
+                f"| {price} | {dur} | {apps} |"
+            )
+        # Surface any feasibility note (e.g. no airport at origin).
+        for o in t.options:
+            if not o.available and o.note:
+                L.append(f"\n> ⚠️ {o.note}")
+        if t.recommended:
+            r = t.recommended
+            L.append(
+                f"\n**Recommended: {r.mode.value.title()}** — "
+                f"{r.currency} {r.total_price:,.2f} total. {t.advisory}"
+            )
+        L.append(f"\n_ℹ️ {t.disclaimer}_")
     else:
-        L.append("_No flight selected yet._")
+        L.append("_Transport options unavailable._")
 
     # --- Hotel ---
     L.append("\n## 🏨 Hotel")

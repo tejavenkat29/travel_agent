@@ -26,7 +26,7 @@ async def estimate_budget(
 ) -> BudgetEstimate:
     return await agent.estimate(
         body.trip,
-        flight_total=body.flight_total,
+        transport_total=body.transport_total,
         hotel_per_night=body.hotel_per_night,
         rates=body.rates,
     )

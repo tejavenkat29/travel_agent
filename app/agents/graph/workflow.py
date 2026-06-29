@@ -47,16 +47,16 @@ from app.agents.graph.routing import route_after_planner
 from app.agents.graph.state import (
     BUDGET,
     FINAL,
-    FLIGHTS,
     HOTEL,
     PLANNER,
+    TRANSPORT,
     WEATHER,
     TravelState,
 )
 from app.core.config import Settings
 
 # The agents that may fan out in parallel after the planner.
-_PARALLEL_NODES = (FLIGHTS, HOTEL, WEATHER)
+_PARALLEL_NODES = (TRANSPORT, HOTEL, WEATHER)
 
 
 def build_travel_workflow(nodes: TravelNodes) -> CompiledStateGraph:
@@ -65,7 +65,7 @@ def build_travel_workflow(nodes: TravelNodes) -> CompiledStateGraph:
 
     # --- Register nodes ---
     graph.add_node(PLANNER, nodes.planner_node)
-    graph.add_node(FLIGHTS, nodes.flight_node)
+    graph.add_node(TRANSPORT, nodes.transport_node)
     graph.add_node(HOTEL, nodes.hotel_node)
     graph.add_node(WEATHER, nodes.weather_node)
     graph.add_node(BUDGET, nodes.budget_node)
@@ -83,7 +83,7 @@ def build_travel_workflow(nodes: TravelNodes) -> CompiledStateGraph:
         [*_PARALLEL_NODES, BUDGET],
     )
 
-    # --- Fan-in: {flights, hotel, weather} -> budget (join) ---
+    # --- Fan-in: {transport, hotel, weather} -> budget (join) ---
     for node in _PARALLEL_NODES:
         graph.add_edge(node, BUDGET)
 
@@ -100,14 +100,14 @@ def build_travel_workflow_from_settings(settings: Settings) -> CompiledStateGrap
     from app.agents.final_response import (
         build_final_response_agent_from_settings,
     )
-    from app.agents.flight import build_flight_agent_from_settings
     from app.agents.hotel import build_hotel_agent_from_settings
     from app.agents.planner import build_planner_agent_from_settings
+    from app.agents.transport import build_transport_agent_from_settings
     from app.agents.weather import build_weather_agent_from_settings
 
     nodes = TravelNodes(
         planner=build_planner_agent_from_settings(settings),
-        flight=build_flight_agent_from_settings(settings),
+        transport=build_transport_agent_from_settings(settings),
         hotel=build_hotel_agent_from_settings(settings),
         weather=build_weather_agent_from_settings(settings),
         budget=build_budget_agent_from_settings(settings),

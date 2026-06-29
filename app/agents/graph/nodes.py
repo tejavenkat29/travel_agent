@@ -14,10 +14,10 @@ from __future__ import annotations
 
 from app.agents.budget import BudgetAgent
 from app.agents.final_response import FinalResponseAgent
-from app.agents.flight import FlightAgent
 from app.agents.graph.state import TravelState
 from app.agents.hotel import HotelAgent
 from app.agents.planner import PlannerAgent
+from app.agents.transport import TransportAgent
 from app.agents.weather import WeatherAgent
 from app.core.logging import get_logger
 from app.schemas.summary import FinalResponseRequest
@@ -32,14 +32,14 @@ class TravelNodes:
         self,
         *,
         planner: PlannerAgent,
-        flight: FlightAgent,
+        transport: TransportAgent,
         hotel: HotelAgent,
         weather: WeatherAgent,
         budget: BudgetAgent,
         final: FinalResponseAgent,
     ) -> None:
         self._planner = planner
-        self._flight = flight
+        self._transport = transport
         self._hotel = hotel
         self._weather = weather
         self._budget = budget
@@ -51,11 +51,11 @@ class TravelNodes:
         trip = await self._planner.plan(state["user_request"])
         return {"trip": trip}
 
-    async def flight_node(self, state: TravelState) -> dict:
-        """Find flight offers for the trip."""
-        logger.info("node.flights")
-        offers = await self._flight.find_flights(state["trip"])
-        return {"flights": offers}
+    async def transport_node(self, state: TravelState) -> dict:
+        """Compare flight/train/bus (validated) for the trip."""
+        logger.info("node.transport")
+        comparison = await self._transport.compare(state["trip"])
+        return {"transport": comparison}
 
     async def hotel_node(self, state: TravelState) -> dict:
         """Find and recommend a hotel for the destination."""
@@ -75,19 +75,23 @@ class TravelNodes:
         return {"weather": advisory}
 
     async def budget_node(self, state: TravelState) -> dict:
-        """Estimate cost using the actual cheapest flight + selected hotel rate.
+        """Estimate cost using the recommended transport + selected hotel rate.
 
-        This node is the join point: it runs only after flights, hotel and
+        This node is the join point: it runs only after transport, hotel and
         weather have all completed, so their results are available in state.
         """
         logger.info("node.budget")
-        offers = state.get("flights") or []
-        flight_total = min((o.total_price for o in offers), default=None)
+        transport = state.get("transport")
+        transport_total = (
+            transport.recommended.total_price
+            if transport and transport.recommended
+            else None
+        )
         hotel = state.get("hotel")
         hotel_per_night = hotel.nightly_rate if hotel else None
         estimate = await self._budget.estimate(
             state["trip"],
-            flight_total=flight_total,
+            transport_total=transport_total,
             hotel_per_night=hotel_per_night,
         )
         return {"budget": estimate}
@@ -97,7 +101,7 @@ class TravelNodes:
         logger.info("node.final_response")
         request = FinalResponseRequest(
             trip=state["trip"],
-            flights=state.get("flights") or [],
+            transport=state.get("transport"),
             hotel=state.get("hotel"),
             weather=state.get("weather"),
             budget=state.get("budget"),
