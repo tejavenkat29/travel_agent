@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import uuid
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ConflictError, NotFoundError
@@ -76,6 +76,7 @@ async def update_user(
 )
 async def delete_user(
     user_id: uuid.UUID, repo: UserRepository = Depends(get_user_repository)
-) -> None:
+) -> Response:
     if not await repo.delete(user_id):
         raise NotFoundError("User not found.")
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
