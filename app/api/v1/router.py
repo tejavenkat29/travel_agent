@@ -8,13 +8,14 @@ implemented — keeping the versioned surface in one place.
 
 from fastapi import APIRouter
 
-from app.api.v1.routes import chat, flights, planner, travel
+from app.api.v1.routes import chat, flights, planner, travel, weather
 
 api_router = APIRouter()
 api_router.include_router(chat.router)
 api_router.include_router(flights.router)
 api_router.include_router(planner.router)
 api_router.include_router(travel.router)
+api_router.include_router(weather.router)
 
 # Further business routers are included here as they are built, e.g.:
 #   from app.api.v1.routes import trips

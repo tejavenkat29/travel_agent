@@ -14,6 +14,7 @@ from app.domain.interfaces.llm import AbstractLLMService
 if TYPE_CHECKING:
     from app.agents.flight import FlightAgent
     from app.agents.planner import PlannerAgent
+    from app.agents.weather import WeatherAgent
     from app.use_cases.travel_assistant import TravelAssistantUseCase
 
 
@@ -60,3 +61,11 @@ def get_flight_agent() -> "FlightAgent":
     from app.agents.flight import build_flight_agent_from_settings
 
     return build_flight_agent_from_settings(get_settings())
+
+
+@lru_cache
+def get_weather_agent() -> "WeatherAgent":
+    """Provide a cached Weather Agent backed by the configured provider."""
+    from app.agents.weather import build_weather_agent_from_settings
+
+    return build_weather_agent_from_settings(get_settings())
