@@ -12,6 +12,8 @@ from app.core.config import Settings, get_settings
 from app.domain.interfaces.llm import AbstractLLMService
 
 if TYPE_CHECKING:
+    from langgraph.graph.state import CompiledStateGraph
+
     from app.agents.budget import BudgetAgent
     from app.agents.final_response import FinalResponseAgent
     from app.agents.flight import FlightAgent
@@ -89,3 +91,11 @@ def get_final_response_agent() -> "FinalResponseAgent":
     )
 
     return build_final_response_agent_from_settings(get_settings())
+
+
+@lru_cache
+def get_travel_workflow() -> "CompiledStateGraph":
+    """Provide the cached, compiled LangGraph travel-planning workflow."""
+    from app.agents.graph.workflow import build_travel_workflow_from_settings
+
+    return build_travel_workflow_from_settings(get_settings())
