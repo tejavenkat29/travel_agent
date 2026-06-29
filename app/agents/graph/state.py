@@ -28,11 +28,13 @@ from app.schemas.weather import WeatherAdvisory
 
 # Node names as constants (shared by the workflow and the router) so the edge
 # wiring and routing logic can never drift apart.
+# IMPORTANT: a LangGraph node name must NOT equal a state-channel key, so the
+# agent nodes are suffixed `_agent` while the channels stay `flights`/`hotel`/...
 PLANNER = "planner"
-FLIGHTS = "flights"
-HOTEL = "hotel"
-WEATHER = "weather"
-BUDGET = "budget"
+FLIGHTS = "flight_agent"
+HOTEL = "hotel_agent"
+WEATHER = "weather_agent"
+BUDGET = "budget_agent"
 FINAL = "final_response"
 
 
