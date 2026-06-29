@@ -33,7 +33,7 @@ def resolve_model_name(settings: Settings) -> str:
 
 def build_chat_model(
     settings: Settings, *, temperature: float | None = None
-) -> "BaseChatModel":
+) -> BaseChatModel:
     """Construct a LangChain chat model for the configured provider."""
     provider = settings.LLM_PROVIDER
     temp = settings.LLM_TEMPERATURE if temperature is None else temperature

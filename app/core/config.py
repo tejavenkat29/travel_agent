@@ -13,7 +13,7 @@ from enum import Enum
 from functools import lru_cache
 from typing import Annotated
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
@@ -57,6 +57,14 @@ class Settings(BaseSettings):
     PORT: int = 8000
     LOG_LEVEL: str = "INFO"
 
+    # --- Docs / API surface ---
+    DOCS_ENABLED: bool = True  # disable interactive docs in hardened deployments
+
+    # --- Rate limiting (fixed-window, per client IP) ---
+    RATE_LIMIT_ENABLED: bool = True
+    RATE_LIMIT_REQUESTS: int = 100
+    RATE_LIMIT_WINDOW_SECONDS: int = 60
+
     # --- Security ---
     SECRET_KEY: str = "change-me"
     # `NoDecode` stops pydantic-settings from JSON-decoding the raw env value so
@@ -92,9 +100,18 @@ class Settings(BaseSettings):
     # --- Redis ---
     REDIS_URL: str = "redis://localhost:6379/0"
 
+    # --- Cache ---
+    CACHE_ENABLED: bool = True
+    CACHE_BACKEND: str = "redis"  # redis | memory
+    # Per-category time-to-live in seconds (tuned to how fast each changes).
+    CACHE_TTL_WEATHER: int = 21600  # 6 hours  — climate/forecast moves slowly
+    CACHE_TTL_HOTELS: int = 1800  # 30 minutes — inventory changes moderately
+    CACHE_TTL_FLIGHTS: int = 300  # 5 minutes  — fares/seats change quickly
+
     # --- External travel APIs ---
     WEATHER_API_KEY: str | None = None
     FLIGHTS_API_KEY: str | None = None
+    HOTELS_API_KEY: str | None = None
 
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")
     @classmethod
@@ -107,6 +124,19 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.APP_ENV is Environment.PRODUCTION
+
+    @model_validator(mode="after")
+    def _enforce_production_safety(self) -> "Settings":
+        """Fail fast on insecure production configuration."""
+        if self.is_production:
+            if self.SECRET_KEY == "change-me":
+                raise ValueError(
+                    "SECRET_KEY must be set to a strong, unique value in "
+                    "production (the default 'change-me' is not allowed)."
+                )
+            if self.DEBUG:
+                raise ValueError("DEBUG must be False in production.")
+        return self
 
 
 @lru_cache

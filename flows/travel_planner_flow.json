@@ -1,0 +1,115 @@
+{
+  "name": "AI Travel Planner",
+  "description": "Planner -> (Flight, Hotel, Weather) -> Budget -> Final Response. Visual recreation of the LangGraph workflow using custom components that wrap the same agents.",
+  "is_component": false,
+  "data": {
+    "nodes": [
+      {
+        "id": "Planner",
+        "type": "genericNode",
+        "position": { "x": 80, "y": 320 },
+        "data": {
+          "id": "Planner",
+          "type": "PlannerAgentComponent",
+          "node": {
+            "display_name": "Planner Agent",
+            "description": "Extract structured trip parameters from a request.",
+            "base_classes": ["Data"],
+            "outputs": [{ "name": "trip", "display_name": "Trip" }]
+          }
+        }
+      },
+      {
+        "id": "Flight",
+        "type": "genericNode",
+        "position": { "x": 440, "y": 80 },
+        "data": {
+          "id": "Flight",
+          "type": "FlightAgentComponent",
+          "node": {
+            "display_name": "Flight Agent",
+            "description": "Find flight offers.",
+            "base_classes": ["Data"],
+            "outputs": [{ "name": "flights", "display_name": "Flights" }]
+          }
+        }
+      },
+      {
+        "id": "Hotel",
+        "type": "genericNode",
+        "position": { "x": 440, "y": 320 },
+        "data": {
+          "id": "Hotel",
+          "type": "HotelAgentComponent",
+          "node": {
+            "display_name": "Hotel Agent",
+            "description": "Recommend a hotel.",
+            "base_classes": ["Data"],
+            "outputs": [{ "name": "hotel", "display_name": "Hotel" }]
+          }
+        }
+      },
+      {
+        "id": "Weather",
+        "type": "genericNode",
+        "position": { "x": 440, "y": 560 },
+        "data": {
+          "id": "Weather",
+          "type": "WeatherAgentComponent",
+          "node": {
+            "display_name": "Weather Agent",
+            "description": "Forecast + advice.",
+            "base_classes": ["Data"],
+            "outputs": [{ "name": "weather", "display_name": "Weather" }]
+          }
+        }
+      },
+      {
+        "id": "Budget",
+        "type": "genericNode",
+        "position": { "x": 800, "y": 200 },
+        "data": {
+          "id": "Budget",
+          "type": "BudgetAgentComponent",
+          "node": {
+            "display_name": "Budget Agent",
+            "description": "Estimate cost vs. budget.",
+            "base_classes": ["Data"],
+            "outputs": [{ "name": "budget", "display_name": "Budget" }]
+          }
+        }
+      },
+      {
+        "id": "Final",
+        "type": "genericNode",
+        "position": { "x": 1160, "y": 320 },
+        "data": {
+          "id": "Final",
+          "type": "FinalResponseComponent",
+          "node": {
+            "display_name": "Final Response Agent",
+            "description": "Synthesize JSON + Markdown summary.",
+            "base_classes": ["Data", "Message"],
+            "outputs": [
+              { "name": "summary", "display_name": "Summary (JSON)" },
+              { "name": "text", "display_name": "Summary (Text)" }
+            ]
+          }
+        }
+      }
+    ],
+    "edges": [
+      { "id": "e_p_flight", "source": "Planner", "sourceHandle": "trip", "target": "Flight", "targetHandle": "trip" },
+      { "id": "e_p_hotel", "source": "Planner", "sourceHandle": "trip", "target": "Hotel", "targetHandle": "trip" },
+      { "id": "e_p_weather", "source": "Planner", "sourceHandle": "trip", "target": "Weather", "targetHandle": "trip" },
+      { "id": "e_p_budget", "source": "Planner", "sourceHandle": "trip", "target": "Budget", "targetHandle": "trip" },
+      { "id": "e_p_final", "source": "Planner", "sourceHandle": "trip", "target": "Final", "targetHandle": "trip" },
+      { "id": "e_flight_budget", "source": "Flight", "sourceHandle": "flights", "target": "Budget", "targetHandle": "flights" },
+      { "id": "e_flight_final", "source": "Flight", "sourceHandle": "flights", "target": "Final", "targetHandle": "flights" },
+      { "id": "e_hotel_budget", "source": "Hotel", "sourceHandle": "hotel", "target": "Budget", "targetHandle": "hotel" },
+      { "id": "e_hotel_final", "source": "Hotel", "sourceHandle": "hotel", "target": "Final", "targetHandle": "hotel" },
+      { "id": "e_weather_final", "source": "Weather", "sourceHandle": "weather", "target": "Final", "targetHandle": "weather" },
+      { "id": "e_budget_final", "source": "Budget", "sourceHandle": "budget", "target": "Final", "targetHandle": "budget" }
+    ]
+  }
+}

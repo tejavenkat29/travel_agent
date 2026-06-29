@@ -19,7 +19,9 @@ from app.api.v1.router import api_router as v1_router
 from app.core.config import settings
 from app.core.error_handlers import register_exception_handlers
 from app.core.logging import configure_logging, get_logger
-from app.core.middleware import RequestContextMiddleware
+from app.core.middleware import RequestContextMiddleware, SecurityHeadersMiddleware
+from app.core.observability import configure_observability
+from app.core.ratelimit import RateLimitMiddleware
 
 logger = get_logger(__name__)
 
@@ -32,6 +34,7 @@ async def lifespan(app: FastAPI):
     here once the infrastructure layer is implemented.
     """
     configure_logging()
+    configure_observability()
     logger.info(
         "application.startup",
         env=settings.APP_ENV.value,
@@ -52,13 +55,25 @@ def create_app() -> FastAPI:
         ),
         debug=settings.DEBUG,
         lifespan=lifespan,
-        docs_url="/docs",
-        redoc_url="/redoc",
-        openapi_url="/openapi.json",
+        # Interactive docs can be disabled for hardened public deployments.
+        docs_url="/docs" if settings.DOCS_ENABLED else None,
+        redoc_url="/redoc" if settings.DOCS_ENABLED else None,
+        openapi_url="/openapi.json" if settings.DOCS_ENABLED else None,
     )
 
-    # --- Middleware (outermost first) ---
+    # --- Middleware ---
+    # Starlette runs middleware in reverse order of registration, so the LAST
+    # added is the OUTERMOST. We want: CORS (outermost) -> rate limit -> request
+    # context/logging -> security headers, so logging captures rate-limited
+    # requests and CORS headers apply even to error responses.
+    app.add_middleware(SecurityHeadersMiddleware)
     app.add_middleware(RequestContextMiddleware)
+    if settings.RATE_LIMIT_ENABLED:
+        app.add_middleware(
+            RateLimitMiddleware,
+            limit=settings.RATE_LIMIT_REQUESTS,
+            window=settings.RATE_LIMIT_WINDOW_SECONDS,
+        )
     if settings.BACKEND_CORS_ORIGINS:
         app.add_middleware(
             CORSMiddleware,

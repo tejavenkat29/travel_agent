@@ -1,22 +1,39 @@
 # ----------------------------------------------------------------------------
-# Local development stack: API + PostgreSQL + Redis
+# Full stack: FastAPI + PostgreSQL + Redis.  Run everything with:
+#   docker compose up
+# A .env file is optional (used for LLM keys etc.); the core stack boots without
+# it because the critical connection settings are provided below.
 # ----------------------------------------------------------------------------
 services:
   api:
     build:
       context: .
       dockerfile: Dockerfile
-    env_file: .env
+    # .env is optional — `required: false` lets the stack start without it.
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      APP_ENV: production
+      DEBUG: "false"
+      # CHANGE THIS in real deployments (use a secret manager, not a literal).
+      SECRET_KEY: ${SECRET_KEY:-local-compose-dev-secret-not-for-real-use}
+      # Point the app at the compose service hostnames (not localhost).
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-travel}:${POSTGRES_PASSWORD:-travel}@postgres:5432/${POSTGRES_DB:-travel_planner}
+      REDIS_URL: redis://redis:6379/0
+      CACHE_BACKEND: redis
+      # Lock CORS down to your real frontend origin(s) in production.
+      BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-http://localhost:3000}
     ports:
       - "8000:8000"
     depends_on:
+      # Wait for the datastores to be HEALTHY before starting the API,
+      # so migrations on startup can connect immediately.
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
-    volumes:
-      - ./app:/app/app
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    restart: unless-stopped
 
   postgres:
     image: postgres:16-alpine
@@ -29,10 +46,11 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-travel}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-travel} -d ${POSTGRES_DB:-travel_planner}"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+    restart: unless-stopped
 
   redis:
     image: redis:7-alpine
@@ -44,8 +62,10 @@ services:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 3s
-      retries: 5
+      retries: 10
+    restart: unless-stopped
 
+# Named volumes persist data across `docker compose down`/`up`.
 volumes:
   postgres_data:
   redis_data:

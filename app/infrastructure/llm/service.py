@@ -47,7 +47,7 @@ class LangChainLLMService(AbstractLLMService):
     """Provider-agnostic chat service wrapping a LangChain chat model."""
 
     def __init__(
-        self, model: "BaseChatModel", *, provider: str, model_name: str
+        self, model: BaseChatModel, *, provider: str, model_name: str
     ) -> None:
         self._model = model
         self._provider = provider

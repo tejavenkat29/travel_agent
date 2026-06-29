@@ -6,9 +6,21 @@ providers are added as the infrastructure layer is implemented.
 """
 
 from functools import lru_cache
+from typing import TYPE_CHECKING
 
 from app.core.config import Settings, get_settings
 from app.domain.interfaces.llm import AbstractLLMService
+
+if TYPE_CHECKING:
+    from langgraph.graph.state import CompiledStateGraph
+
+    from app.agents.budget import BudgetAgent
+    from app.agents.final_response import FinalResponseAgent
+    from app.agents.flight import FlightAgent
+    from app.agents.hotel import HotelAgent
+    from app.agents.planner import PlannerAgent
+    from app.agents.weather import WeatherAgent
+    from app.use_cases.travel_assistant import TravelAssistantUseCase
 
 
 def get_app_settings() -> Settings:
@@ -28,3 +40,71 @@ def get_llm_service() -> AbstractLLMService:
     from app.infrastructure.llm.service import build_llm_service
 
     return build_llm_service(get_settings())
+
+
+@lru_cache
+def get_travel_assistant() -> "TravelAssistantUseCase":
+    """Provide a cached travel-assistant use case backed by the LCEL chain."""
+    from app.agents.chains.travel_chain import build_travel_chain_from_settings
+    from app.use_cases.travel_assistant import TravelAssistantUseCase
+
+    chain = build_travel_chain_from_settings(get_settings())
+    return TravelAssistantUseCase(chain)
+
+
+@lru_cache
+def get_planner_agent() -> "PlannerAgent":
+    """Provide a cached Planner Agent backed by the configured provider."""
+    from app.agents.planner import build_planner_agent_from_settings
+
+    return build_planner_agent_from_settings(get_settings())
+
+
+@lru_cache
+def get_flight_agent() -> "FlightAgent":
+    """Provide a cached Flight Agent backed by the configured provider."""
+    from app.agents.flight import build_flight_agent_from_settings
+
+    return build_flight_agent_from_settings(get_settings())
+
+
+@lru_cache
+def get_hotel_agent() -> "HotelAgent":
+    """Provide a cached Hotel Agent backed by the configured provider."""
+    from app.agents.hotel import build_hotel_agent_from_settings
+
+    return build_hotel_agent_from_settings(get_settings())
+
+
+@lru_cache
+def get_weather_agent() -> "WeatherAgent":
+    """Provide a cached Weather Agent backed by the configured provider."""
+    from app.agents.weather import build_weather_agent_from_settings
+
+    return build_weather_agent_from_settings(get_settings())
+
+
+@lru_cache
+def get_budget_agent() -> "BudgetAgent":
+    """Provide a cached Budget Agent."""
+    from app.agents.budget import build_budget_agent_from_settings
+
+    return build_budget_agent_from_settings(get_settings())
+
+
+@lru_cache
+def get_final_response_agent() -> "FinalResponseAgent":
+    """Provide a cached Final Response Agent (with the itinerary chain)."""
+    from app.agents.final_response import (
+        build_final_response_agent_from_settings,
+    )
+
+    return build_final_response_agent_from_settings(get_settings())
+
+
+@lru_cache
+def get_travel_workflow() -> "CompiledStateGraph":
+    """Provide the cached, compiled LangGraph travel-planning workflow."""
+    from app.agents.graph.workflow import build_travel_workflow_from_settings
+
+    return build_travel_workflow_from_settings(get_settings())
