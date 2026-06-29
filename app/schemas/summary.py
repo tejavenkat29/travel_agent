@@ -84,3 +84,35 @@ class FinalResponse(BaseModel):
     natural_language: str = Field(
         ..., description="Human-friendly Markdown travel summary"
     )
+
+
+class TripPlanRequest(BaseModel):
+    """Input for the end-to-end `/plan` workflow.
+
+    Supplying `provided_flight` / `provided_hotel` tells the workflow the user
+    already has them, so those agents are skipped. `include_weather=False`
+    skips the weather agent.
+    """
+
+    request: str = Field(
+        ..., min_length=3, description="Natural-language travel request"
+    )
+    provided_flight: FlightOffer | None = Field(
+        default=None, description="A flight the user already has (skips flight search)"
+    )
+    provided_hotel: HotelInfo | None = Field(
+        default=None, description="A hotel the user already booked (skips hotel search)"
+    )
+    include_weather: bool = Field(
+        default=True, description="Set False to skip the weather agent"
+    )
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "request": "Plan a 3 day trip from Mumbai to Tokyo for 2, "
+                "budget $4000.",
+                "include_weather": True,
+            }
+        }
+    }

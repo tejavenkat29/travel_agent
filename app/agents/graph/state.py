@@ -6,8 +6,13 @@ that update into the state (default channel behaviour = overwrite the key) and
 passes the result to the next node. Think of it as the shared "trip folder" that
 every agent reads from and adds to.
 
-`total=False` means every field is optional — the state starts with just
-`user_request` and gets progressively filled in as nodes run.
+`total=False` means every field is optional — the state starts with only the
+input fields and gets progressively filled in as nodes run.
+
+The skip decisions read directly from this state:
+- `flights` already present  → the user supplied a flight → skip the flight node.
+- `hotel` already present     → the user booked a hotel    → skip the hotel node.
+- `include_weather` is False  → the user disabled weather   → skip the weather node.
 """
 
 from __future__ import annotations
@@ -16,18 +21,29 @@ from typing import TypedDict
 
 from app.schemas.budget import BudgetEstimate
 from app.schemas.flight import FlightOffer
-from app.schemas.summary import FinalResponse, HotelInfo
+from app.schemas.hotel import HotelInfo
+from app.schemas.summary import FinalResponse
 from app.schemas.trip import TripParameters
 from app.schemas.weather import WeatherAdvisory
+
+# Node names as constants (shared by the workflow and the router) so the edge
+# wiring and routing logic can never drift apart.
+PLANNER = "planner"
+FLIGHTS = "flights"
+HOTEL = "hotel"
+WEATHER = "weather"
+BUDGET = "budget"
+FINAL = "final_response"
 
 
 class TravelState(TypedDict, total=False):
     """State channels shared across all nodes."""
 
     user_request: str  # input: the raw natural-language request
+    include_weather: bool  # input: user toggle (default treated as True)
     trip: TripParameters  # produced by the planner node
-    flights: list[FlightOffer]  # produced by the flight node
+    flights: list[FlightOffer]  # from the flight node OR supplied by the user
+    hotel: HotelInfo | None  # from the hotel node OR supplied by the user
     weather: WeatherAdvisory  # produced by the weather node
-    hotel: HotelInfo | None  # reserved for a future hotel node
     budget: BudgetEstimate  # produced by the budget node
     final: FinalResponse  # produced by the final-response node
