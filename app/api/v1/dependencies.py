@@ -13,6 +13,7 @@ from app.domain.interfaces.llm import AbstractLLMService
 
 if TYPE_CHECKING:
     from app.agents.budget import BudgetAgent
+    from app.agents.final_response import FinalResponseAgent
     from app.agents.flight import FlightAgent
     from app.agents.planner import PlannerAgent
     from app.agents.weather import WeatherAgent
@@ -78,3 +79,13 @@ def get_budget_agent() -> "BudgetAgent":
     from app.agents.budget import build_budget_agent_from_settings
 
     return build_budget_agent_from_settings(get_settings())
+
+
+@lru_cache
+def get_final_response_agent() -> "FinalResponseAgent":
+    """Provide a cached Final Response Agent (with the itinerary chain)."""
+    from app.agents.final_response import (
+        build_final_response_agent_from_settings,
+    )
+
+    return build_final_response_agent_from_settings(get_settings())
