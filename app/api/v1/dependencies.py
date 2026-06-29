@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from app.agents.budget import BudgetAgent
     from app.agents.final_response import FinalResponseAgent
     from app.agents.flight import FlightAgent
+    from app.agents.hotel import HotelAgent
     from app.agents.planner import PlannerAgent
     from app.agents.weather import WeatherAgent
     from app.use_cases.travel_assistant import TravelAssistantUseCase
@@ -65,6 +66,14 @@ def get_flight_agent() -> "FlightAgent":
     from app.agents.flight import build_flight_agent_from_settings
 
     return build_flight_agent_from_settings(get_settings())
+
+
+@lru_cache
+def get_hotel_agent() -> "HotelAgent":
+    """Provide a cached Hotel Agent backed by the configured provider."""
+    from app.agents.hotel import build_hotel_agent_from_settings
+
+    return build_hotel_agent_from_settings(get_settings())
 
 
 @lru_cache

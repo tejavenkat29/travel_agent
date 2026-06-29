@@ -1,20 +1,41 @@
-"""LangGraph workflow definition.
+"""LangGraph travel-planning workflow.
 
-Wires the nodes into a directed graph and compiles it into a runnable.
+Connects all agents into one compiled graph. The topology is a **fan-out /
+fan-in** (not a straight line): after the planner extracts the trip, the
+Flight, Hotel and Weather agents run **in parallel**, then the Budget agent
+joins their results, and the Final Response agent synthesizes everything.
 
-LangGraph concepts used here:
-- `StateGraph(TravelState)` — a graph whose every node shares the `TravelState`
-  schema. It declares the channels (state keys) and how nodes connect.
-- `add_node(name, fn)` — registers a node (our agent adapters).
-- `add_edge(a, b)` — an unconditional transition: after `a` finishes, run `b`.
-- `START` / `END` — the built-in virtual entry and exit nodes. `START -> first`
-  marks where execution begins; `last -> END` marks where it stops.
-- `.compile()` — validates the graph and returns a runnable (a Pebble/Runnable)
-  exposing `.invoke()` / `.ainvoke()`.
+    START
+      │
+    planner                         (extract TripParameters)
+      │
+      ├──────────┬──────────┐       fan-out: run concurrently
+   flights     hotel     weather    (each writes a different state channel)
+      │          │          │
+      └──────────┴──────────┘       fan-in / join
+      │
+    budget                          (needs flights + hotel; reads the joined state)
+      │
+   final_response                   (synthesize JSON + natural language)
+      │
+     END
 
-This is a simple linear pipeline (no conditional routing yet):
+State transitions (LangGraph executes in "supersteps" — batches of nodes that
+run together, then their updates are merged into the state before the next
+batch):
 
-    START → planner → flights → weather → budget → final_response → END
+  • Superstep 1 — `planner` runs, writes `trip`.
+  • Superstep 2 — `flights`, `hotel`, `weather` run concurrently. Each returns a
+    partial update for a DIFFERENT channel (`flights`, `hotel`, `weather`), so
+    the default "overwrite" reducer merges them with no conflict. (If two
+    parallel nodes wrote the same channel, a custom reducer would be required.)
+  • Superstep 3 — `budget` runs only after ALL three predecessors complete
+    (the three incoming edges form the join), so the merged `flights`/`hotel`
+    are available; it writes `budget`.
+  • Superstep 4 — `final_response` runs, reads the whole accumulated state,
+    writes `final`. Then END.
+
+No conditional routing: every edge is unconditional.
 """
 
 from __future__ import annotations
@@ -26,25 +47,44 @@ from app.agents.graph.nodes import TravelNodes
 from app.agents.graph.state import TravelState
 from app.core.config import Settings
 
+# Node names (kept as constants to avoid stringly-typed edge wiring drift).
+PLANNER = "planner"
+FLIGHTS = "flights"
+HOTEL = "hotel"
+WEATHER = "weather"
+BUDGET = "budget"
+FINAL = "final_response"
+
+# The agents that fan out in parallel after the planner.
+_PARALLEL_NODES = (FLIGHTS, HOTEL, WEATHER)
+
 
 def build_travel_workflow(nodes: TravelNodes) -> CompiledStateGraph:
-    """Assemble and compile the linear travel-planning graph."""
+    """Assemble and compile the parallel travel-planning graph."""
     graph = StateGraph(TravelState)
 
-    # --- Nodes ---
-    graph.add_node("planner", nodes.planner_node)
-    graph.add_node("flights", nodes.flight_node)
-    graph.add_node("weather", nodes.weather_node)
-    graph.add_node("budget", nodes.budget_node)
-    graph.add_node("final_response", nodes.final_node)
+    # --- Register nodes ---
+    graph.add_node(PLANNER, nodes.planner_node)
+    graph.add_node(FLIGHTS, nodes.flight_node)
+    graph.add_node(HOTEL, nodes.hotel_node)
+    graph.add_node(WEATHER, nodes.weather_node)
+    graph.add_node(BUDGET, nodes.budget_node)
+    graph.add_node(FINAL, nodes.final_node)
 
-    # --- Edges (linear, unconditional) ---
-    graph.add_edge(START, "planner")
-    graph.add_edge("planner", "flights")
-    graph.add_edge("flights", "weather")
-    graph.add_edge("weather", "budget")
-    graph.add_edge("budget", "final_response")
-    graph.add_edge("final_response", END)
+    # --- Entry ---
+    graph.add_edge(START, PLANNER)
+
+    # --- Fan-out: planner -> {flights, hotel, weather} (run in parallel) ---
+    for node in _PARALLEL_NODES:
+        graph.add_edge(PLANNER, node)
+
+    # --- Fan-in: {flights, hotel, weather} -> budget (join) ---
+    for node in _PARALLEL_NODES:
+        graph.add_edge(node, BUDGET)
+
+    # --- Tail ---
+    graph.add_edge(BUDGET, FINAL)
+    graph.add_edge(FINAL, END)
 
     return graph.compile()
 
@@ -56,12 +96,14 @@ def build_travel_workflow_from_settings(settings: Settings) -> CompiledStateGrap
         build_final_response_agent_from_settings,
     )
     from app.agents.flight import build_flight_agent_from_settings
+    from app.agents.hotel import build_hotel_agent_from_settings
     from app.agents.planner import build_planner_agent_from_settings
     from app.agents.weather import build_weather_agent_from_settings
 
     nodes = TravelNodes(
         planner=build_planner_agent_from_settings(settings),
         flight=build_flight_agent_from_settings(settings),
+        hotel=build_hotel_agent_from_settings(settings),
         weather=build_weather_agent_from_settings(settings),
         budget=build_budget_agent_from_settings(settings),
         final=build_final_response_agent_from_settings(settings),

@@ -95,6 +95,7 @@ class Settings(BaseSettings):
     # --- External travel APIs ---
     WEATHER_API_KEY: str | None = None
     FLIGHTS_API_KEY: str | None = None
+    HOTELS_API_KEY: str | None = None
 
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")
     @classmethod

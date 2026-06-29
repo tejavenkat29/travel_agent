@@ -14,20 +14,18 @@ from pydantic import BaseModel, Field
 
 from app.schemas.budget import BudgetEstimate
 from app.schemas.flight import FlightOffer
+from app.schemas.hotel import HotelInfo
 from app.schemas.trip import TripParameters
 from app.schemas.weather import WeatherAdvisory
 
-
-class HotelInfo(BaseModel):
-    """Hotel details (supplied by a future Hotel Agent; optional for now)."""
-
-    name: str = Field(..., description="Hotel name")
-    area: str | None = Field(default=None, description="Neighbourhood/area")
-    rating: float | None = Field(default=None, ge=0, le=5, description="Star rating")
-    nightly_rate: float = Field(..., ge=0, description="Cost per night")
-    nights: int = Field(..., ge=1, description="Number of nights")
-    total_price: float = Field(..., ge=0, description="Total room cost")
-    currency: str = Field(default="USD", description="Currency")
+__all__ = [
+    "HotelInfo",
+    "DayPlan",
+    "ItineraryPlan",
+    "TravelSummary",
+    "FinalResponseRequest",
+    "FinalResponse",
+]
 
 
 class DayPlan(BaseModel):

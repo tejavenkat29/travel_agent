@@ -15,6 +15,7 @@ from __future__ import annotations
 from app.agents.budget import BudgetAgent
 from app.agents.final_response import FinalResponseAgent
 from app.agents.flight import FlightAgent
+from app.agents.hotel import HotelAgent
 from app.agents.planner import PlannerAgent
 from app.agents.weather import WeatherAgent
 from app.agents.graph.state import TravelState
@@ -32,12 +33,14 @@ class TravelNodes:
         *,
         planner: PlannerAgent,
         flight: FlightAgent,
+        hotel: HotelAgent,
         weather: WeatherAgent,
         budget: BudgetAgent,
         final: FinalResponseAgent,
     ) -> None:
         self._planner = planner
         self._flight = flight
+        self._hotel = hotel
         self._weather = weather
         self._budget = budget
         self._final = final
@@ -54,6 +57,14 @@ class TravelNodes:
         offers = await self._flight.find_flights(state["trip"])
         return {"flights": offers}
 
+    async def hotel_node(self, state: TravelState) -> dict:
+        """Find and recommend a hotel for the destination."""
+        logger.info("node.hotel")
+        if not state["trip"].destination:
+            return {}  # nothing to look up without a destination
+        hotel = await self._hotel.find_hotel(state["trip"])
+        return {"hotel": hotel}
+
     async def weather_node(self, state: TravelState) -> dict:
         """Fetch weather + advice for the destination."""
         logger.info("node.weather")
@@ -64,12 +75,20 @@ class TravelNodes:
         return {"weather": advisory}
 
     async def budget_node(self, state: TravelState) -> dict:
-        """Estimate cost, using the cheapest flight as the actual airfare."""
+        """Estimate cost using the actual cheapest flight + selected hotel rate.
+
+        This node is the join point: it runs only after flights, hotel and
+        weather have all completed, so their results are available in state.
+        """
         logger.info("node.budget")
         offers = state.get("flights") or []
         flight_total = min((o.total_price for o in offers), default=None)
+        hotel = state.get("hotel")
+        hotel_per_night = hotel.nightly_rate if hotel else None
         estimate = await self._budget.estimate(
-            state["trip"], flight_total=flight_total
+            state["trip"],
+            flight_total=flight_total,
+            hotel_per_night=hotel_per_night,
         )
         return {"budget": estimate}
 
