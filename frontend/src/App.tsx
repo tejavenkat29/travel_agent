@@ -6,10 +6,10 @@ import { planTrip } from "./lib/api";
 import { useChats } from "./lib/useChats";
 
 const SUGGESTIONS = [
-  { icon: "🧳", label: "Plan a 7-day trip\nto Japan", prompt: "Plan a 7-day trip to Japan" },
-  { icon: "🏖️", label: "Best beaches\nin Bali", prompt: "Best beaches in Bali for a relaxed 5-day trip" },
-  { icon: "✈️", label: "Cheapest flights\nto Europe", prompt: "Find the cheapest flights to Europe for 2 travelers" },
-  { icon: "📍", label: "Top places to visit\nin Switzerland", prompt: "Top places to visit in Switzerland over 6 days" },
+  { icon: "🏖️", label: "3 days in Goa\nunder ₹15,000", prompt: "Plan a 3 day trip to Goa for 2 with a budget of 15000 INR" },
+  { icon: "🏔️", label: "Manali trip\nfrom Delhi", prompt: "Plan a 5 day trip from Delhi to Manali for 2" },
+  { icon: "🕌", label: "Golden Triangle\nDelhi–Agra–Jaipur", prompt: "Plan a 6 day Golden Triangle trip: Delhi, Agra and Jaipur for 2" },
+  { icon: "🌴", label: "Kerala backwaters\n5 days", prompt: "Plan a 5 day Kerala backwaters trip for 2 travelers" },
 ];
 
 let idSeq = 0;
@@ -19,6 +19,7 @@ export default function App() {
   const chats = useChats();
   const [loading, setLoading] = useState(false);
   const [dark, setDark] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);
   const threadRef = useRef<HTMLDivElement>(null);
 
   const messages = chats.messages;
@@ -33,7 +34,12 @@ export default function App() {
     setLoading(true);
     try {
       const res = await planTrip(text);
-      chats.appendMessage({ id: nextId(), role: "assistant", text: res.natural_language });
+      chats.appendMessage({
+        id: nextId(),
+        role: "assistant",
+        text: res.natural_language,
+        summary: res.summary,
+      });
     } catch (err) {
       chats.appendMessage({
         id: nextId(),
@@ -47,29 +53,40 @@ export default function App() {
   }
 
   const empty = messages.length === 0;
+  const closeNav = () => setNavOpen(false);
 
   return (
-    <div className={`app ${dark ? "dark" : ""}`}>
+    <div className={`app ${dark ? "dark" : ""} ${navOpen ? "nav-open" : ""}`}>
       <Sidebar
         conversations={chats.conversations}
         folders={chats.folders}
         currentId={chats.currentId}
-        onNewChat={chats.newChat}
-        onSelect={chats.selectChat}
+        onNewChat={() => { chats.newChat(); closeNav(); }}
+        onSelect={(id) => { chats.selectChat(id); closeNav(); }}
         onCreateFolder={chats.createFolder}
         onMoveChat={chats.moveChat}
         onDeleteChat={chats.deleteChat}
         onDeleteFolder={chats.deleteFolder}
       />
+      <div className="backdrop" onClick={closeNav} />
 
       <main className="main">
-        <button
-          className="theme-toggle"
-          onClick={() => setDark((d) => !d)}
-          aria-label="Toggle theme"
-        >
-          {dark ? "🌙" : "☀"}
-        </button>
+        <div className="topbar">
+          <button
+            className="nav-toggle"
+            onClick={() => setNavOpen(true)}
+            aria-label="Open menu"
+          >
+            ☰
+          </button>
+          <button
+            className="theme-toggle"
+            onClick={() => setDark((d) => !d)}
+            aria-label="Toggle theme"
+          >
+            {dark ? "🌙" : "☀"}
+          </button>
+        </div>
 
         {empty ? (
           <div className="hero">

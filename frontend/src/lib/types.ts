@@ -1,17 +1,61 @@
 // Mirrors the backend `FinalResponse` / `TravelSummary` schemas (the parts the
 // UI consumes). Kept loose where the backend allows nulls.
 
-export interface FlightOffer {
-  airline: string;
-  flight_number: string;
+export interface FareClass {
+  name: string;
+  price_per_person: number;
+}
+
+export interface TransportOption {
+  mode: "flight" | "train" | "bus";
+  available: boolean;
+  provider?: string | null;
+  price_per_person?: number | null;
+  total_price?: number | null;
+  currency: string;
+  duration_hours?: number | null;
+  fare_classes: FareClass[];
+  booking_apps: string[];
+  note?: string | null;
+}
+
+export interface TransportComparison {
   origin: string;
   destination: string;
-  departure_time: string;
-  arrival_time: string;
-  stops: number;
+  travelers: number;
+  currency: string;
+  options: TransportOption[];
+  recommended?: TransportOption | null;
+  advisory: string;
+  disclaimer: string;
+}
+
+export interface HotelInfo {
+  name: string;
+  area?: string | null;
+  rating?: number | null;
+  nightly_rate: number;
+  nights: number;
   total_price: number;
   currency: string;
-  within_budget?: boolean | null;
+}
+
+export interface WeatherAdvisory {
+  forecast: {
+    condition: string;
+    temp_high_c: number;
+    temp_low_c: number;
+  };
+  clothing_suggestions: string[];
+  best_seasons: string[];
+  best_time_to_visit: string;
+}
+
+export interface CostLineItem {
+  category: string;
+  amount: number;
+  detail: string;
+  estimated: boolean;
 }
 
 export interface BudgetEstimate {
@@ -19,7 +63,15 @@ export interface BudgetEstimate {
   total_cost: number;
   user_budget?: number | null;
   within_budget?: boolean | null;
+  difference?: number | null;
   summary: string;
+  breakdown: { line_items: CostLineItem[] };
+}
+
+export interface DayPlan {
+  day: number;
+  title: string;
+  activities: string[];
 }
 
 export interface TravelSummary {
@@ -28,9 +80,12 @@ export interface TravelSummary {
   travelers: number;
   num_days: number;
   currency: string;
-  flight?: FlightOffer | null;
-  hotel?: { name: string; total_price: number; currency: string } | null;
+  transport?: TransportComparison | null;
+  hotel?: HotelInfo | null;
+  weather?: WeatherAdvisory | null;
   budget?: BudgetEstimate | null;
+  recommendations: string[];
+  daily_itinerary: DayPlan[];
 }
 
 export interface FinalResponse {
@@ -49,6 +104,7 @@ export interface ChatMessage {
   role: "user" | "assistant";
   text: string; // markdown for assistant, plain for user
   error?: boolean;
+  summary?: TravelSummary; // structured plan → rendered as rich cards
 }
 
 /** A user-created folder ("Trip") that groups conversations. */

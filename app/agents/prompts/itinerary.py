@@ -14,11 +14,11 @@ ITINERARY_SYSTEM_PROMPT = (
     "day-by-day plan plus useful recommendations for the trip described.\n\n"
     "Rules:\n"
     "- Produce exactly {num_days} day entries, numbered 1..{num_days}.\n"
-    "- Each day needs a short theme title and 3-5 specific activities that "
-    "suit the destination and the expected weather.\n"
-    "- Recommendations should be practical: local food, getting around, "
-    "safety, money, and packing notes — 4 to 6 items.\n"
-    "- Be specific to the destination; avoid generic filler."
+    "- Each day: a short theme title and exactly 3 activities. Keep each "
+    "activity to a short phrase (max ~8 words) — no long sentences.\n"
+    "- Provide exactly 4 brief recommendations (food, transport, safety, "
+    "money/packing). One short line each.\n"
+    "- Be specific to the destination; avoid filler. Be concise."
 )
 
 
