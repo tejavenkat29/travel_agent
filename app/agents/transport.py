@@ -21,10 +21,33 @@ from app.infrastructure.data.transport_data import (
     has_airport,
     nearest_airport,
 )
-from app.schemas.transport import TransportComparison, TransportMode, TransportOption
+from app.schemas.transport import (
+    FareClass,
+    TransportComparison,
+    TransportMode,
+    TransportOption,
+)
 from app.schemas.trip import TripParameters
 
 logger = get_logger(__name__)
+
+# Fare-class multipliers relative to each mode's base fare.
+_TRAIN_CLASSES = [
+    ("General (2S)", 0.4),
+    ("Sleeper (SL)", 0.6),
+    ("AC 3-Tier (3A)", 1.0),
+    ("AC 2-Tier (2A)", 1.5),
+    ("AC First (1A)", 2.4),
+]
+_BUS_CLASSES = [
+    ("Non-AC Seater", 0.7),
+    ("AC Seater", 1.0),
+    ("AC Sleeper", 1.4),
+]
+_FLIGHT_CLASSES = [
+    ("Economy", 1.0),
+    ("Business", 2.8),
+]
 
 # Rough currency factors vs INR (indicative only).
 _CCY_FACTOR = {"INR": 1.0, "USD": 1 / 83, "EUR": 1 / 90, "GBP": 1 / 105}
@@ -60,6 +83,12 @@ class TransportAgent:
         def money(inr: float) -> float:
             return round(inr * factor, 2)
 
+        def fares(base: float, classes) -> list[FareClass]:
+            return [
+                FareClass(name=name, price_per_person=money(base * mult))
+                for name, mult in classes
+            ]
+
         options: list[TransportOption] = []
 
         # --- Flight: only if BOTH ends have an airport ---
@@ -75,6 +104,7 @@ class TransportAgent:
                     total_price=money(fare * travelers),
                     currency=currency,
                     duration_hours=round(1 + dist * 0.12, 1),
+                    fare_classes=fares(fare, _FLIGHT_CLASSES),
                     booking_apps=BOOKING_APPS["flight"],
                 )
             )
@@ -108,6 +138,7 @@ class TransportAgent:
                 total_price=money(train_fare * travelers),
                 currency=currency,
                 duration_hours=round(2 + dist * 0.6, 1),
+                fare_classes=fares(train_fare, _TRAIN_CLASSES),
                 booking_apps=BOOKING_APPS["train"],
             )
         )
@@ -123,6 +154,7 @@ class TransportAgent:
                 total_price=money(bus_fare * travelers),
                 currency=currency,
                 duration_hours=round(2.5 + dist * 0.8, 1),
+                fare_classes=fares(bus_fare, _BUS_CLASSES),
                 booking_apps=BOOKING_APPS["bus"],
             )
         )

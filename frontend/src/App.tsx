@@ -3,7 +3,7 @@ import { Sidebar } from "./components/Sidebar";
 import { Composer } from "./components/Composer";
 import { Message, TypingBubble } from "./components/Message";
 import { planTrip } from "./lib/api";
-import type { ChatMessage } from "./lib/types";
+import { useChats } from "./lib/useChats";
 
 const SUGGESTIONS = [
   { icon: "🧳", label: "Plan a 7-day trip\nto Japan", prompt: "Plan a 7-day trip to Japan" },
@@ -16,10 +16,12 @@ let idSeq = 0;
 const nextId = () => `m${++idSeq}`;
 
 export default function App() {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const chats = useChats();
   const [loading, setLoading] = useState(false);
   const [dark, setDark] = useState(false);
   const threadRef = useRef<HTMLDivElement>(null);
+
+  const messages = chats.messages;
 
   useEffect(() => {
     threadRef.current?.scrollTo({ top: threadRef.current.scrollHeight, behavior: "smooth" });
@@ -27,24 +29,18 @@ export default function App() {
 
   async function handleSend(text: string) {
     if (loading) return;
-    setMessages((m) => [...m, { id: nextId(), role: "user", text }]);
+    chats.appendMessage({ id: nextId(), role: "user", text });
     setLoading(true);
     try {
       const res = await planTrip(text);
-      setMessages((m) => [
-        ...m,
-        { id: nextId(), role: "assistant", text: res.natural_language },
-      ]);
+      chats.appendMessage({ id: nextId(), role: "assistant", text: res.natural_language });
     } catch (err) {
-      setMessages((m) => [
-        ...m,
-        {
-          id: nextId(),
-          role: "assistant",
-          text: `⚠️ ${(err as Error).message}`,
-          error: true,
-        },
-      ]);
+      chats.appendMessage({
+        id: nextId(),
+        role: "assistant",
+        text: `⚠️ ${(err as Error).message}`,
+        error: true,
+      });
     } finally {
       setLoading(false);
     }
@@ -54,7 +50,17 @@ export default function App() {
 
   return (
     <div className={`app ${dark ? "dark" : ""}`}>
-      <Sidebar onNewChat={() => setMessages([])} />
+      <Sidebar
+        conversations={chats.conversations}
+        folders={chats.folders}
+        currentId={chats.currentId}
+        onNewChat={chats.newChat}
+        onSelect={chats.selectChat}
+        onCreateFolder={chats.createFolder}
+        onMoveChat={chats.moveChat}
+        onDeleteChat={chats.deleteChat}
+        onDeleteFolder={chats.deleteFolder}
+      />
 
       <main className="main">
         <button

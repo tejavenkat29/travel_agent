@@ -127,6 +127,19 @@ def render_travel_markdown(s: TravelSummary) -> str:
                 f"| {o.mode.value.title()} | {avail} | {o.provider or '—'} "
                 f"| {price} | {dur} | {apps} |"
             )
+        # Per-class fares (per person) for available modes.
+        fare_lines = []
+        for o in t.options:
+            if o.available and o.fare_classes:
+                classes = " · ".join(
+                    f"{fc.name} {o.currency} {fc.price_per_person:,.0f}"
+                    for fc in o.fare_classes
+                )
+                fare_lines.append(f"- **{o.mode.value.title()}** — {classes}")
+        if fare_lines:
+            L.append("\n**Fares (per person):**")
+            L.extend(fare_lines)
+
         # Surface any feasibility note (e.g. no airport at origin).
         for o in t.options:
             if not o.available and o.note:

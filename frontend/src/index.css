@@ -196,6 +196,44 @@ body {
   cursor: pointer;
 }
 
+/* Active conversation/folder highlight */
+.list-item.active {
+  background: var(--green-soft);
+}
+.list-empty {
+  color: var(--muted);
+  font-size: 12px;
+  padding: 6px 8px;
+  list-style: none;
+}
+/* Per-row actions: move-to-folder select + delete (revealed on hover) */
+.move-select {
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text);
+  border-radius: 6px;
+  font-size: 11px;
+  max-width: 84px;
+  padding: 2px 4px;
+  opacity: 0;
+}
+.del-btn {
+  border: none;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 4px;
+  opacity: 0;
+}
+.list-item:hover .move-select,
+.list-item:hover .del-btn {
+  opacity: 1;
+}
+.del-btn:hover {
+  color: #c0564f;
+}
+
 /* ---------------- Main ---------------- */
 .main {
   flex: 1;
