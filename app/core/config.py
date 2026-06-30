@@ -13,7 +13,7 @@ from enum import Enum
 from functools import lru_cache
 from typing import Annotated
 
-from pydantic import Field, field_validator, model_validator
+from pydantic import AliasChoices, Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
@@ -87,10 +87,24 @@ class Settings(BaseSettings):
     OLLAMA_MODEL: str = "llama3.1"
 
     # --- LangSmith observability ---
-    LANGCHAIN_TRACING_V2: bool = False
-    LANGCHAIN_ENDPOINT: str = "https://api.smith.langchain.com"
-    LANGCHAIN_API_KEY: str | None = None
-    LANGCHAIN_PROJECT: str = "travel-planner"
+    # Accept both the classic LANGCHAIN_* names and the newer LANGSMITH_* names
+    # (LangSmith's own UI tells you to use LANGSMITH_*), so either works in .env.
+    LANGCHAIN_TRACING_V2: bool = Field(
+        default=False,
+        validation_alias=AliasChoices("LANGCHAIN_TRACING_V2", "LANGSMITH_TRACING"),
+    )
+    LANGCHAIN_ENDPOINT: str = Field(
+        default="https://api.smith.langchain.com",
+        validation_alias=AliasChoices("LANGCHAIN_ENDPOINT", "LANGSMITH_ENDPOINT"),
+    )
+    LANGCHAIN_API_KEY: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("LANGCHAIN_API_KEY", "LANGSMITH_API_KEY"),
+    )
+    LANGCHAIN_PROJECT: str = Field(
+        default="travel-planner",
+        validation_alias=AliasChoices("LANGCHAIN_PROJECT", "LANGSMITH_PROJECT"),
+    )
 
     # --- PostgreSQL ---
     DATABASE_URL: str = (

@@ -111,21 +111,16 @@ def render_travel_markdown(s: TravelSummary) -> str:
     L.append("\n## 🚆 Getting There")
     t = s.transport
     if t:
-        L.append("| Mode | Available | Operator | Total | ~Duration | Book via |")
-        L.append("|---|---|---|---|---|---|")
-        for o in t.options:
-            if o.available and o.total_price is not None:
-                avail = "✅"
-                price = f"{o.currency} {o.total_price:,.2f}"
-                dur = f"{o.duration_hours}h" if o.duration_hours else "—"
-            else:
-                avail = "❌"
-                price = "—"
-                dur = "—"
+        # Only show modes that are actually available (no empty ❌ rows).
+        available = [o for o in t.options if o.available and o.total_price is not None]
+        L.append("| Mode | Operator | Total | ~Duration | Book via |")
+        L.append("|---|---|---|---|---|")
+        for o in available:
+            dur = f"{o.duration_hours}h" if o.duration_hours else "—"
             apps = ", ".join(o.booking_apps[:3]) if o.booking_apps else "—"
             L.append(
-                f"| {o.mode.value.title()} | {avail} | {o.provider or '—'} "
-                f"| {price} | {dur} | {apps} |"
+                f"| {o.mode.value.title()} | {o.provider or '—'} "
+                f"| {o.currency} {o.total_price:,.2f} | {dur} | {apps} |"
             )
         # Per-class fares (per person) for available modes.
         fare_lines = []
