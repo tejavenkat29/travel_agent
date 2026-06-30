@@ -59,6 +59,9 @@ class TravelSummary(BaseModel):
         default=None, description="Flight/train/bus comparison + recommendation"
     )
     hotel: HotelInfo | None = None
+    hotel_options: list[HotelInfo] = Field(
+        default_factory=list, description="Several hotel suggestions for the location"
+    )
     weather: WeatherAdvisory | None = None
     budget: BudgetEstimate | None = None
     recommendations: list[str] = Field(default_factory=list)
@@ -73,6 +76,7 @@ class FinalResponseRequest(BaseModel):
         default=None, description="Comparison from the Transport Agent"
     )
     hotel: HotelInfo | None = None
+    hotel_options: list[HotelInfo] = Field(default_factory=list)
     weather: WeatherAdvisory | None = None
     budget: BudgetEstimate | None = None
 

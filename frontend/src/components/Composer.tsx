@@ -1,4 +1,5 @@
-import { useState, type KeyboardEvent } from "react";
+import { useEffect, useState, type KeyboardEvent } from "react";
+import { useSpeechRecognition } from "../lib/useSpeechRecognition";
 
 interface ComposerProps {
   onSend: (text: string) => void;
@@ -7,10 +8,17 @@ interface ComposerProps {
 
 export function Composer({ onSend, disabled }: ComposerProps) {
   const [value, setValue] = useState("");
+  const speech = useSpeechRecognition();
+
+  // While dictating, mirror the live transcript into the input.
+  useEffect(() => {
+    if (speech.listening) setValue(speech.transcript);
+  }, [speech.transcript, speech.listening]);
 
   function submit() {
     const text = value.trim();
     if (!text || disabled) return;
+    if (speech.listening) speech.stop();
     onSend(text);
     setValue("");
   }
@@ -23,11 +31,18 @@ export function Composer({ onSend, disabled }: ComposerProps) {
     }
   }
 
+  function toggleMic() {
+    if (speech.listening) speech.stop();
+    else speech.start();
+  }
+
   return (
     <div className="composer">
       <textarea
         className="composer-input"
-        placeholder="Ask anything about travel..."
+        placeholder={
+          speech.listening ? "Listening… speak now" : "Ask anything about travel..."
+        }
         value={value}
         rows={1}
         onChange={(e) => setValue(e.target.value)}
@@ -36,12 +51,19 @@ export function Composer({ onSend, disabled }: ComposerProps) {
       />
       <div className="composer-row">
         <div className="composer-tools">
-          <button className="tool" aria-label="Attach" type="button">
-            📎
-          </button>
-          <button className="tool" aria-label="Web" type="button">
-            🌐
-          </button>
+          {speech.supported ? (
+            <button
+              className={`tool ${speech.listening ? "mic-active" : ""}`}
+              aria-label={speech.listening ? "Stop dictation" : "Speak"}
+              title={speech.listening ? "Stop" : "Speak your request"}
+              type="button"
+              onClick={toggleMic}
+            >
+              🎤
+            </button>
+          ) : (
+            <span className="composer-hint">Press Enter to send</span>
+          )}
         </div>
         <button
           className="send"

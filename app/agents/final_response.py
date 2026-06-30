@@ -80,6 +80,7 @@ class FinalResponseAgent:
             or (req.budget.currency if req.budget else "USD"),
             transport=req.transport,
             hotel=req.hotel,
+            hotel_options=req.hotel_options,
             weather=req.weather,
             budget=req.budget,
             recommendations=itinerary.recommendations,
@@ -150,16 +151,20 @@ def render_travel_markdown(s: TravelSummary) -> str:
         L.append("_Transport options unavailable._")
 
     # --- Hotel ---
-    L.append("\n## 🏨 Hotel")
-    if s.hotel:
-        h = s.hotel
-        stars = f" ({h.rating}★)" if h.rating else ""
-        area = f", {h.area}" if h.area else ""
-        L.append(f"- **{h.name}**{stars}{area}")
-        L.append(
-            f"- {h.currency} {h.nightly_rate:,.2f}/night × {h.nights} nights "
-            f"= **{h.currency} {h.total_price:,.2f}**"
-        )
+    L.append("\n## 🏨 Hotels")
+    suggestions = s.hotel_options or ([s.hotel] if s.hotel else [])
+    if suggestions:
+        L.append("| Hotel | Area | Rating | Per night | Total |")
+        L.append("|---|---|---|---|---|")
+        for h in suggestions:
+            stars = f"{h.rating}★" if h.rating else "—"
+            rec = " ⭐" if s.hotel and h.name == s.hotel.name else ""
+            L.append(
+                f"| {h.name}{rec} | {h.area or '—'} | {stars} "
+                f"| {h.currency} {h.nightly_rate:,.0f} "
+                f"| {h.currency} {h.total_price:,.0f} |"
+            )
+        L.append("\n_⭐ recommended · Book via OYO · MakeMyTrip · Booking.com_")
     else:
         L.append("_Hotel to be selected._")
 

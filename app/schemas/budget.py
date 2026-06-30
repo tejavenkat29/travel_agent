@@ -16,21 +16,23 @@ from app.schemas.trip import TripParameters
 class BudgetRates(BaseModel):
     """Per-unit cost assumptions used when actual figures aren't supplied."""
 
+    # Defaults are indicative INR figures (used only when an actual value isn't
+    # supplied by the transport/hotel agents).
     travel_per_person: float = Field(
-        default=300.0,
+        default=2000.0,
         ge=0,
         description="Estimated intercity travel (flight/train/bus) per person",
     )
     hotel_per_night: float = Field(
-        default=120.0, ge=0, description="Estimated room cost per night"
+        default=2500.0, ge=0, description="Estimated room cost per night"
     )
     food_per_person_per_day: float = Field(
-        default=40.0, ge=0, description="Estimated food cost per person per day"
+        default=800.0, ge=0, description="Estimated food cost per person per day"
     )
     transport_per_person_per_day: float = Field(
-        default=20.0, ge=0, description="Estimated local transport per person/day"
+        default=400.0, ge=0, description="Estimated local transport per person/day"
     )
-    currency: str = Field(default="USD", description="Currency of these rates")
+    currency: str = Field(default="INR", description="Currency of these rates")
 
 
 class BudgetRequest(BaseModel):

@@ -23,7 +23,7 @@ from app.agents.chains.itinerary_chain import build_itinerary_chain
 from app.agents.final_response import FinalResponseAgent
 from app.agents.graph.nodes import TravelNodes
 from app.agents.graph.workflow import build_travel_workflow
-from app.schemas.hotel import HotelInfo
+from app.schemas.hotel import HotelInfo, HotelOffer, HotelSearchResponse
 from app.schemas.summary import DayPlan, ItineraryPlan
 from app.schemas.transport import TransportComparison, TransportMode, TransportOption
 from app.schemas.trip import TripParameters
@@ -56,11 +56,19 @@ class SlowTransport:
 
 
 class SlowHotel:
-    async def find_hotel(self, _state):
+    async def search(self, _state):
         await asyncio.sleep(DELAY)
-        return HotelInfo(
+        offer = HotelOffer(
+            name="H", area="C", rating=4.0, nightly_rate=100,
+            currency="USD", amenities=[],
+        )
+        selected = HotelInfo(
             name="H", area="C", rating=4.0, nightly_rate=100,
             nights=3, total_price=300, currency="USD",
+        )
+        return HotelSearchResponse(
+            destination="Tokyo", nights=3, currency="USD",
+            count=1, selected=selected, offers=[offer],
         )
 
 
