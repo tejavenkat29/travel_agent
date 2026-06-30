@@ -45,7 +45,7 @@ class HotelAgent:
             destination=state.destination,
             nights=state.num_days or 1,
             guests=state.travelers or 1,
-            currency=state.currency or "USD",
+            currency=state.currency or "INR",
         )
 
     @traceable(run_type="chain", name="hotel_agent")

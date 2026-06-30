@@ -58,12 +58,29 @@ class TravelNodes:
         return {"transport": comparison}
 
     async def hotel_node(self, state: TravelState) -> dict:
-        """Find and recommend a hotel for the destination."""
+        """Find a recommended hotel + several suggestions for the destination."""
         logger.info("node.hotel")
-        if not state["trip"].destination:
+        trip = state["trip"]
+        if not trip.destination:
             return {}  # nothing to look up without a destination
-        hotel = await self._hotel.find_hotel(state["trip"])
-        return {"hotel": hotel}
+        response = await self._hotel.search(trip)
+        nights = trip.num_days or 1
+        # Turn the raw offers into trip-specific suggestions (with totals).
+        from app.schemas.hotel import HotelInfo
+
+        options = [
+            HotelInfo(
+                name=o.name,
+                area=o.area,
+                rating=o.rating,
+                nightly_rate=o.nightly_rate,
+                nights=nights,
+                total_price=round(o.nightly_rate * nights, 2),
+                currency=o.currency,
+            )
+            for o in response.offers
+        ]
+        return {"hotel": response.selected, "hotel_options": options}
 
     async def weather_node(self, state: TravelState) -> dict:
         """Fetch weather + advice for the destination."""
@@ -103,6 +120,7 @@ class TravelNodes:
             trip=state["trip"],
             transport=state.get("transport"),
             hotel=state.get("hotel"),
+            hotel_options=state.get("hotel_options") or [],
             weather=state.get("weather"),
             budget=state.get("budget"),
         )

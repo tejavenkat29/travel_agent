@@ -82,6 +82,7 @@ export interface TravelSummary {
   currency: string;
   transport?: TransportComparison | null;
   hotel?: HotelInfo | null;
+  hotel_options: HotelInfo[];
   weather?: WeatherAdvisory | null;
   budget?: BudgetEstimate | null;
   recommendations: string[];

@@ -75,19 +75,33 @@ export function TripPlan({ summary: s }: { summary: TravelSummary }) {
           </section>
         )}
 
-        {/* Hotel */}
-        {s.hotel && (
+        {/* Hotels — suggestions for the location */}
+        {(s.hotel_options?.length || s.hotel) && (
           <section className="pcard">
-            <h3>🏨 Hotel</h3>
-            <div className="big">{s.hotel.name}</div>
-            <div className="muted">
-              {s.hotel.rating ? `${s.hotel.rating}★` : ""}
-              {s.hotel.area ? ` · ${s.hotel.area}` : ""}
-            </div>
-            <div className="mode-price">
-              {money(s.hotel.currency, s.hotel.nightly_rate)}/night × {s.hotel.nights} ={" "}
-              <b>{money(s.hotel.currency, s.hotel.total_price)}</b>
-            </div>
+            <h3>🏨 Hotels</h3>
+            {(s.hotel_options?.length ? s.hotel_options : s.hotel ? [s.hotel] : []).map(
+              (h) => {
+                const isReco = s.hotel && h.name === s.hotel.name;
+                return (
+                  <div key={h.name} className="mode-row">
+                    <div className="mode-head">
+                      <span className="mode-name">
+                        {h.name} {isReco && <span className="reco-star">⭐</span>}
+                      </span>
+                      <span className="mode-price">
+                        {money(h.currency, h.total_price)}
+                      </span>
+                    </div>
+                    <div className="muted">
+                      {h.rating ? `${h.rating}★` : ""}
+                      {h.area ? ` · ${h.area}` : ""} ·{" "}
+                      {money(h.currency, h.nightly_rate)}/night × {h.nights}
+                    </div>
+                  </div>
+                );
+              },
+            )}
+            <div className="apps">Book: OYO, MakeMyTrip, Booking.com</div>
           </section>
         )}
 

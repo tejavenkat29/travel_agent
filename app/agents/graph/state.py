@@ -44,7 +44,8 @@ class TravelState(TypedDict, total=False):
     include_weather: bool  # input: user toggle (default treated as True)
     trip: TripParameters  # produced by the planner node
     transport: TransportComparison  # flight/train/bus comparison
-    hotel: HotelInfo | None  # from the hotel node OR supplied by the user
+    hotel: HotelInfo | None  # the recommended hotel
+    hotel_options: list[HotelInfo]  # several hotel suggestions for the location
     weather: WeatherAdvisory  # produced by the weather node
     budget: BudgetEstimate  # produced by the budget node
     final: FinalResponse  # produced by the final-response node
