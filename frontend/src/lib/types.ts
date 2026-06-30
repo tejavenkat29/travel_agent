@@ -50,3 +50,19 @@ export interface ChatMessage {
   text: string; // markdown for assistant, plain for user
   error?: boolean;
 }
+
+/** A user-created folder ("Trip") that groups conversations. */
+export interface Folder {
+  id: string;
+  name: string;
+}
+
+/** A saved conversation (chat thread), optionally filed under a folder. */
+export interface Conversation {
+  id: string;
+  title: string;
+  folderId: string | null;
+  createdAt: number;
+  updatedAt: number;
+  messages: ChatMessage[];
+}
