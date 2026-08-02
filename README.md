@@ -5,10 +5,11 @@ A production-ready, multi-agent travel planning platform built on **FastAPI**,
 **PostgreSQL** and **Redis**, containerised with **Docker**, and pluggable
 across **OpenAI / Gemini / Ollama** LLM providers.
 
-> **Status:** project scaffold only. Business logic (agents, graphs, tools,
-> persistence, endpoints) is **not** implemented yet — this commit establishes
-> the structure, configuration, and developer setup following **clean
-> architecture** principles.
+> **Status:** actively developed. The multi-agent core (planner, flights,
+> hotels, transport, budget, weather, final-response) is implemented on a
+> LangGraph workflow, with FastAPI wiring, typed settings, and a Dockerised
+> Postgres + Redis stack — all following **clean architecture** principles.
+> Remaining work is tracked in the [Roadmap](#️-roadmap-next-milestones).
 
 ---
 
@@ -241,4 +242,4 @@ Detailed docs:
 
 ## 📄 License
 
-TBD.
+Released under the [MIT License](LICENSE) © 2026 Teja Venkat Kundem.
