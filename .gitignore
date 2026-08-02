@@ -59,3 +59,9 @@ docker-compose.override.yml
 
 # --------------------------- Jupyter ------------------------------
 .ipynb_checkpoints/
+
+# ------------------------- Frontend / Node -------------------------
+node_modules/
+.vite/
+dist/
+*.tsbuildinfo
